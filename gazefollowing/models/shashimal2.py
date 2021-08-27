@@ -60,7 +60,6 @@ class Shashimal2(nn.Module):
         self.face_net = nn.Sequential(*(list(model.children())[:-2]))
         self.attn = nn.Linear(2832, 1*7*7)
         self.scence_net = nn.Sequential(*(list(model.children())[:-2]))
-        self.dequant = torch.quantization.DeQuantStub()
 
 
     def forward(self,image,face,head_channel,object_channel):
@@ -105,12 +104,6 @@ class Shashimal2(nn.Module):
         out_m1_0 = self.smax(self.fc_m1_0(output))
         out_0_m1 = self.smax(self.fc_0_m1(output))
         out_0_1 = self.smax(self.fc_0_1(output))
-
-        out_0_0 = self.dequant(out_0_0)
-        out_1_0 = self.dequant(out_1_0)
-        out_m1_0 = self.dequant(out_m1_0)
-        out_0_m1 = self.dequant(out_0_m1)
-        out_0_1 = self.dequant(out_0_1)
         return [out_0_0, out_1_0, out_m1_0, out_0_m1, out_0_1]
 
 

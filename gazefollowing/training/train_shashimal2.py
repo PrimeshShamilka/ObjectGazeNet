@@ -84,9 +84,9 @@ def calc_ang_err(output, target, eyes):
 #Loss function used is cross entropy
 criterion = nn.NLLLoss().cuda()
 
-def train(model,train_data_loader, criterion, optimizer, logger ,num_epochs=5,):
+def train(model,train_data_loader, criterion, optimizer, logger, writer ,num_epochs=5,):
     since = time.time()
-
+    n_total_steps = len(train_data_loader)
     for epoch in range(num_epochs+1):
 
         model.train()  # Set model to training mode
@@ -121,8 +121,11 @@ def train(model,train_data_loader, criterion, optimizer, logger ,num_epochs=5,):
             running_loss.append(total_loss.item())
             if i % 100 == 99:
                 logger.info('%s'%(str(np.mean(running_loss))))
+                writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
                 running_loss = [] 
-
+        for name, weight in model.named_parameters():
+            writer.add_histogram(name,weight, epoch)
+            writer.add_histogram(f'{name}.grad',weight.grad, epoch)
     return model          
 
 class GazeOptimizer():
