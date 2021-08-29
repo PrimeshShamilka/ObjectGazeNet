@@ -25,9 +25,9 @@ from tqdm import tqdm
 from utils import preprocess_image
 import argparse
 
-from models.gazenet import GazeNet
+from models.shashimal2 import Shashimal2
 from models.__init__ import save_checkpoint, resume_checkpoint
-from dataloader.gazenet import GooDataset, GazeDataset
+from dataloader.shashimal2 import GooDataset
 
 def parse_inputs():
 
@@ -217,7 +217,7 @@ def main():
     args = parse_inputs()
 
     # Load Model
-    net = GazeNet()
+    net = Shashimal2()
     net.cuda()
 
     resume_path = args.resume_path
