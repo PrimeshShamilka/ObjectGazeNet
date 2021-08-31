@@ -46,6 +46,7 @@ class Shashimal2(nn.Module):
         self.fc_m1_0 = nn.Linear(169, 25)
         self.fc_1_0 = nn.Linear(169, 25)
         count=0
+        
         # Initialize weights
         for m in self.modules():
             count+=1

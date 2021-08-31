@@ -128,6 +128,7 @@ def train(model,train_data_loader, criterion, optimizer, logger, writer ,num_epo
             writer.add_histogram(f'{name}.grad',weight.grad, epoch)
     return model          
 
+
 class GazeOptimizer():
     
     def __init__(self, net, initial_lr, weight_decay=1e-6):
