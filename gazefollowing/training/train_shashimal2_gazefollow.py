@@ -97,9 +97,9 @@ def train(model, train_data_loader, criterion, optimizer, logger, writer, num_ep
         running_loss = []
 
         # Iterate over data.
-        # img, face, head_channel, gaze_heatmap, image_path, gaze_inside
-        for i, (img, face, head_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
-                gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
+        # img, face, head_channel, gaze_heatmap, image_path, gaze_inside, shifted_grids
+        for i, (img, face, head_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets
+                ) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
 
             # initialize to zeros
             object_channel = torch.from_numpy(np.ones((224,224), dtype=np.float32)).unsqueeze(0)
