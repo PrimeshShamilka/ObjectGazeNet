@@ -102,7 +102,7 @@ def train(model, train_data_loader, criterion, optimizer, logger, writer, num_ep
                 gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
 
             # initialize to zeros
-            object_channel = torch.from_numpy(np.zeros((224,224), dtype=np.float32)).unsqueeze(0)
+            object_channel = torch.from_numpy(np.ones((224,224), dtype=np.float32)).unsqueeze(0)
 
             image = img.cuda()
             head_channel = head_channel.cuda()
