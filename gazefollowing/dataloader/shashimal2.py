@@ -500,7 +500,9 @@ class GazeDataset(Dataset):
             plt.imshow(imresize(1 - head_channel.squeeze(0), (self.input_size, self.input_size)), alpha=0.2)
             plt.savefig('viz_aug.png')
 
+        object_channel = torch.ones(1,224,224)
+
         if self.training == 'test':
             return img, face, head_channel, eye, gaze_heatmap, gaze, gaze_inside, image_path
         else:
-            return img, face, head_channel, gaze_heatmap, image_path, gaze_inside, shifted_grids
+            return img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_grids

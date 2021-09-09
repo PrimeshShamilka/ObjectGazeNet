@@ -98,12 +98,12 @@ def train(model, train_data_loader, criterion, optimizer, logger, writer, num_ep
 
         # Iterate over data.
         # img, face, head_channel, gaze_heatmap, image_path, gaze_inside, shifted_grids
-        for i, (img, face, head_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets
+        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets
                 ) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
 
             # initialize to zeros
             # object_channel = torch.from_numpy(np.ones((224,224), dtype=np.float32)).unsqueeze(0)
-            object_channel = torch.ones(32,1,224,224)
+            # object_channel = torch.ones(32,1,224,224)
             image = img.cuda()
             head_channel = head_channel.cuda()
             face = face.cuda()
