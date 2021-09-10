@@ -13,7 +13,7 @@ import numpy as np
 from tqdm import tqdm
 import cv2
 
-from pytorchtools import EarlyStopping
+# from pytorchtools import EarlyStopping
 
 
 def euclid_dist(output, target):
@@ -105,7 +105,7 @@ def train(model, train_data_loader, criterion, optimizer, logger, writer, num_ep
 
 
         # Iterate over data.
-        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
+        for i, (img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, image_path, gaze_inside, shifted_targets,
                 gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
             image = img.cuda()
             head_channel = head_channel.cuda()
@@ -130,7 +130,7 @@ def train(model, train_data_loader, criterion, optimizer, logger, writer, num_ep
 
             # regression loss
             # l2 loss computed only for inside case
-            l2_loss = mse_loss(gaze_heatmap_pred, gaze_heatmap) * loss_amp_factor
+            l2_loss = mse_loss(gaze_heatmap_pred, gaze_heatmap.cuda()) * loss_amp_factor
             l2_loss = torch.mean(l2_loss, dim=1)
             l2_loss = torch.mean(l2_loss, dim=1)
             gaze_inside = gaze_inside.cuda().to(torch.float)

@@ -272,7 +272,7 @@ class GooDataset(Dataset):
         elif self.training == 'test':
             return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, shifted_grids, gaze_final, eyess
         else:
-            return img, face, head_channel, object_channel,eyes_loc, image_path, gaze_inside , shifted_grids, gaze_final
+            return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, image_path, gaze_inside , shifted_grids, gaze_final
 
 
 class GazeDataset(Dataset):
