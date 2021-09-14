@@ -411,7 +411,7 @@ def train_gazefollow_with_early_stopping(model, train_data_loader, valid_data_lo
         writer.add_scalar('validation_loss', valid_loss, epoch * n_total_steps)
 
         # early stopping detector
-        early_stopping(valid_loss, model)
+        early_stopping(valid_loss, model, optimizer, epoch, logger)
         if early_stopping.early_stop:
             print("Early stopping")
             break

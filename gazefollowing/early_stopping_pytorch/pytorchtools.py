@@ -26,13 +26,13 @@ class EarlyStopping:
         self.delta = delta
         self.path = path
         self.trace_func = trace_func
-    def __call__(self, val_loss, model):
+    def __call__(self, val_loss, model, optimizer, epoch, logger):
 
         score = -val_loss
 
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, model, optimizer, epoch, logger)
         elif score < self.best_score + self.delta:
             self.counter += 1
             self.trace_func(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -40,12 +40,16 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model)
+            self.save_checkpoint(val_loss, model, optimizer, epoch, logger)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model):
+    def save_checkpoint(self, val_loss, model, optimizer, epoch, logger):
         '''Saves model when validation loss decrease.'''
         if self.verbose:
             self.trace_func(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
-        torch.save(model.state_dict(), self.path)
+        # torch.save(model.state_dict(), self.path)
+        state = {'epoch': epoch, 'state_dict': model.state_dict(),
+                 'optimizer': optimizer.state_dict(), 'logger': logger, }
+        filename = self.path + '_' + str(epoch)
+        torch.save(state, filename)
         self.val_loss_min = val_loss
