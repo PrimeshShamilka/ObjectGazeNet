@@ -13,7 +13,7 @@ import numpy as np
 from tqdm import tqdm
 import cv2
 
-from pytorchtools import EarlyStopping
+from early_stopping_pytorch.pytorchtools import EarlyStopping
 
 def euclid_dist(output, target):
     
@@ -302,6 +302,7 @@ def test(model, test_data_loader, logger, save_output=False):
     all_predmap = []
 
     with torch.no_grad():
+        # return img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox, eyess, gt_bboxes
         for i, (img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox,eye) in tqdm(enumerate(test_data_loader), total=len(test_data_loader)) :
             image = img.cuda()
             head_channel =  head_channel.cuda()

@@ -268,7 +268,7 @@ class GooDataset(Dataset):
                                                  type='Gaussian')
 
         if self.training == 'test' and self.use_gtbox:
-            return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox, eyess, gt_bboxes
+            return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox, eyess
         elif self.training == 'test':
             return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, shifted_grids, gaze_final, eyess
         else:

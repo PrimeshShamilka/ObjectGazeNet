@@ -23,6 +23,7 @@ from dataloader.shashimal2 import GooDataset
 from dataloader.shashimal2 import GazeDataset
 from dataloader import chong_imutils
 from training.train_primesh import train, GazeOptimizer, train_with_early_stopping
+from training.train_shashimal2 import test
 
 logger = setup_logger(name='first_logger',
                       log_dir ='./logs/',
@@ -83,4 +84,6 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('runs/primesh')
 
 # model_ft2 = train(model_ft2,train_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
-model_ft2 = train_with_early_stopping(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
+# model_ft2 = train_with_early_stopping(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
+
+test(model_ft2, test_data_loader,logger, save_output=True)
