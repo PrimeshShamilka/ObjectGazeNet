@@ -313,8 +313,7 @@ def train_gazefollow_with_early_stopping(model, train_data_loader, valid_data_lo
         # print("Training in progress ...")
 
         # Iterate over data.
-        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside,
-                shifted_grids) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
+        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
             image = img.cuda()
             head_channel = head_channel.cuda()
             face = face.cuda()
@@ -362,8 +361,7 @@ def train_gazefollow_with_early_stopping(model, train_data_loader, valid_data_lo
 
         # validate the model
         model.eval()
-        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside,
-                shifted_grids) in tqdm(enumerate(valid_data_loader), total=len(valid_data_loader)):
+        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets) in tqdm(enumerate(valid_data_loader), total=len(valid_data_loader)):
             image = img.cuda()
             head_channel = head_channel.cuda()
             face = face.cuda()
