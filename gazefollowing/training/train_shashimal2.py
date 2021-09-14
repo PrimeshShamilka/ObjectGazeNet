@@ -13,7 +13,7 @@ import numpy as np
 from tqdm import tqdm
 import cv2
 
-# from pytorchtools import EarlyStopping
+from pytorchtools import EarlyStopping
 
 def euclid_dist(output, target):
     
@@ -132,96 +132,97 @@ def train(model,train_data_loader, criterion, optimizer, logger, writer ,num_epo
 
 
 
-# def train_with_early_stopping(model, train_data_loader, criterion, optimizer, logger, writer, num_epochs=5, ):
-#
-#     # initialize the early_stopping object
-#     early_stopping = EarlyStopping(patience=patience, verbose=True)
-#
-#     since = time.time()
-#     n_total_steps = len(train_data_loader)
-#     for epoch in range(num_epochs + 1):
-#
-#         model.train()  # Set model to training mode
-#
-#         running_loss = []
-#         valid_losses = []
-#         avg_valid_losses = []
-#
-#         # Iterate over data.
-#         for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
-#                 gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
-#             image = img.cuda()
-#             head_channel = head_channel.cuda()
-#             face = face.cuda()
-#             object_channel = object_channel.cuda()
-#             shifted_targets = shifted_targets.cuda().squeeze()
-#
-#             # zero the parameter gradients
-#             optimizer.zero_grad()
-#
-#             # forward
-#             # track history if only in train
-#             outputs = model(image, face, head_channel, object_channel)
-#             total_loss = criterion(outputs[0], shifted_targets[:, 0, :].max(1)[1])
-#             for j in range(1, len(outputs)):
-#                 total_loss += criterion(outputs[j], shifted_targets[:, j, :].max(1)[1])
-#
-#             total_loss = total_loss / (len(outputs) * 1.0)
-#
-#             total_loss.backward()
-#             optimizer.step()
-#
-#             inputs_size = image.size(0)
-#
-#             running_loss.append(total_loss.item())
-#             if i % 100 == 99:
-#                 logger.info('%s' % (str(np.mean(running_loss))))
-#                 writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
-#                 running_loss = []
-#
-#         # validate the model
-#         model.eval()
-#         for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
-#                 gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
-#
-#             image = img.cuda()
-#             head_channel = head_channel.cuda()
-#             face = face.cuda()
-#             object_channel = object_channel.cuda()
-#             shifted_targets = shifted_targets.cuda().squeeze()
-#
-#             outputs = model(image, face, head_channel, object_channel)
-#             total_loss = criterion(outputs[0], shifted_targets[:, 0, :].max(1)[1])
-#             for j in range(1, len(outputs)):
-#                 total_loss += criterion(outputs[j], shifted_targets[:, j, :].max(1)[1])
-#
-#             total_loss = total_loss / (len(outputs) * 1.0)
-#
-#             valid_losses.append(total_loss.item)
-#
-#         valid_loss = np.average(valid_losses)
-#         avg_valid_losses.append(valid_loss)
-#
-#         epoch_len = len(str(n_epochs))
-#
-#         print_msg = (f'[{epoch:>{epoch_len}}/{n_epochs:>{epoch_len}}] ' + f'valid_loss: {valid_loss:.5f}')
-#
-#         print(print_msg)
-#
-#         valid_losses = []
-#
-#         # early stopping detector
-#         early_stopping(valid_loss, model)
-#         if early_stopping.early_stop:
-#             print("Early stopping")
-#             break
-#
-#
-#         for name, weight in model.named_parameters():
-#             writer.add_histogram(name, weight, epoch)
-#             writer.add_histogram(f'{name}.grad', weight.grad, epoch)
-#
-#     return model
+def train_with_early_stopping(model, train_data_loader, criterion, optimizer, logger, writer, num_epochs=5, ):
+
+    # initialize the early_stopping object
+    patience = 20
+    early_stopping = EarlyStopping(patience=patience, verbose=True)
+
+    since = time.time()
+    n_total_steps = len(train_data_loader)
+    for epoch in range(num_epochs + 1):
+
+        model.train()  # Set model to training mode
+
+        running_loss = []
+        valid_losses = []
+        avg_valid_losses = []
+
+        # Iterate over data.
+        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
+                gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
+            image = img.cuda()
+            head_channel = head_channel.cuda()
+            face = face.cuda()
+            object_channel = object_channel.cuda()
+            shifted_targets = shifted_targets.cuda().squeeze()
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward
+            # track history if only in train
+            outputs = model(image, face, head_channel, object_channel)
+            total_loss = criterion(outputs[0], shifted_targets[:, 0, :].max(1)[1])
+            for j in range(1, len(outputs)):
+                total_loss += criterion(outputs[j], shifted_targets[:, j, :].max(1)[1])
+
+            total_loss = total_loss / (len(outputs) * 1.0)
+
+            total_loss.backward()
+            optimizer.step()
+
+            inputs_size = image.size(0)
+
+            running_loss.append(total_loss.item())
+            if i % 100 == 99:
+                logger.info('%s' % (str(np.mean(running_loss))))
+                writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
+                running_loss = []
+
+        # validate the model
+        model.eval()
+        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
+                gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
+
+            image = img.cuda()
+            head_channel = head_channel.cuda()
+            face = face.cuda()
+            object_channel = object_channel.cuda()
+            shifted_targets = shifted_targets.cuda().squeeze()
+
+            outputs = model(image, face, head_channel, object_channel)
+            total_loss = criterion(outputs[0], shifted_targets[:, 0, :].max(1)[1])
+            for j in range(1, len(outputs)):
+                total_loss += criterion(outputs[j], shifted_targets[:, j, :].max(1)[1])
+
+            total_loss = total_loss / (len(outputs) * 1.0)
+
+            valid_losses.append(total_loss.item)
+
+        valid_loss = np.average(valid_losses)
+        avg_valid_losses.append(valid_loss)
+
+        epoch_len = len(str(num_epochs))
+
+        print_msg = (f'[{epoch:>{epoch_len}}/{num_epochs:>{epoch_len}}] ' + f'valid_loss: {valid_loss:.5f}')
+
+        print(print_msg)
+
+        valid_losses = []
+
+        # early stopping detector
+        early_stopping(valid_loss, model)
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+
+
+        for name, weight in model.named_parameters():
+            writer.add_histogram(name, weight, epoch)
+            writer.add_histogram(f'{name}.grad', weight.grad, epoch)
+
+    return model
 
 
 

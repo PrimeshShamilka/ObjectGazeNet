@@ -22,7 +22,7 @@ from models.__init__ import save_checkpoint, resume_checkpoint
 from dataloader.shashimal2 import GooDataset
 from dataloader.shashimal2 import GazeDataset
 from dataloader import chong_imutils
-from training.train_primesh import train, GazeOptimizer
+from training.train_primesh import train, GazeOptimizer, train_with_early_stopping
 
 logger = setup_logger(name='first_logger',
                       log_dir ='./logs/',
@@ -40,7 +40,13 @@ test_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/
 
 print ('Train')
 train_set = GooDataset(images_dir, pickle_path, 'train')
+train_set, val_set = torch.utils.data.random_split(train_set, [2000, 450])
 train_data_loader = DataLoader(dataset=train_set,
+                                           batch_size=batch_size,
+                                           shuffle=True,
+                                           num_workers=16)
+
+val_data_loader = DataLoader(dataset=val_set,
                                            batch_size=batch_size,
                                            shuffle=True,
                                            num_workers=16)
@@ -76,4 +82,5 @@ if False:
 from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('runs/primesh')
 
-model_ft2 = train(model_ft2,train_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
+# model_ft2 = train(model_ft2,train_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
+model_ft2 = train_with_early_stopping(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
