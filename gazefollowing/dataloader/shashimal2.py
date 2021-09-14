@@ -500,6 +500,7 @@ class GazeDataset(Dataset):
             plt.imshow(imresize(1 - head_channel.squeeze(0), (self.input_size, self.input_size)), alpha=0.2)
             plt.savefig('viz_aug.png')
 
+        # intialize object_channel to all ones
         object_channel = torch.ones(1,224,224)
 
         if self.training == 'test':
