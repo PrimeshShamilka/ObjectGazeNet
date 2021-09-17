@@ -156,10 +156,10 @@ def train(model, train_data_loader, criterion, optimizer, logger, writer, num_ep
     return model
 
 # GOO dataset
-def train_with_early_stopping(model, train_data_loader, valid_data_loader, criterion, optimizer, logger, writer, num_epochs=5, ):
+def train_with_early_stopping(model, train_data_loader, valid_data_loader, criterion, optimizer, logger, writer, num_epochs=5, patience=5):
 
     # initialize the early_stopping object
-    patience = 5
+    # patience = 5
     early_stopping = EarlyStopping(patience=patience, verbose=True)
 
     since = time.time()
