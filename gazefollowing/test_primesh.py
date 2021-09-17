@@ -38,17 +38,26 @@ images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datase
 pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/oneshotrealhumansNew.pickle'
 test_images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
 test_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle'
+val_images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
+val_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/valrealhumansNew.pickle'
 
 print ('Train')
 train_set = GooDataset(images_dir, pickle_path, 'train')
-train_set, val_set = torch.utils.data.random_split(train_set, [2000, 450])
+# train_set, val_set = torch.utils.data.random_split(train_set, [2000, 450])
 train_data_loader = DataLoader(dataset=train_set,
                                            batch_size=batch_size,
                                            shuffle=True,
                                            num_workers=16)
 
+# val_data_loader = DataLoader(dataset=val_set,
+#                                            batch_size=batch_size,
+#                                            shuffle=True,
+#                                            num_workers=16)
+
+print ('Val')
+val_set = GooDataset(val_images_dir, val_pickle_path, 'train')
 val_data_loader = DataLoader(dataset=val_set,
-                                           batch_size=batch_size,
+                                           batch_size=4,
                                            shuffle=True,
                                            num_workers=16)
 
@@ -84,6 +93,6 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('runs/primesh')
 
 # model_ft2 = train(model_ft2,train_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
-# model_ft2 = train_with_early_stopping(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
+model_ft2 = train_with_early_stopping(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
 
-test(model_ft2, test_data_loader,logger, save_output=True)
+# test(model_ft2, test_data_loader,logger, save_output=True)

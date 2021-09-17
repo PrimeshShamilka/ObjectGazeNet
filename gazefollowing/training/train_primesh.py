@@ -229,11 +229,12 @@ def train_with_early_stopping(model, train_data_loader, valid_data_loader, crite
         model.eval()
         for i, (img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, image_path, gaze_inside, shifted_targets,
                 gaze_final) in tqdm(enumerate(valid_data_loader), total=len(valid_data_loader)):
+
             image = img.cuda()
             head_channel = head_channel.cuda()
             face = face.cuda()
             object_channel = object_channel.cuda()
-            shifted_targets = shifted_targets.cuda().squeeze()
+            shifted_targets = shifted_targets.cuda().squeeze(1)
 
             # zero the parameter gradients
             optimizer.zero_grad()
