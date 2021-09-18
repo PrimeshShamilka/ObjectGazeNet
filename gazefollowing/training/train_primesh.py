@@ -150,9 +150,9 @@ def train(model, train_data_loader, criterion, optimizer, logger, writer, num_ep
                 logger.info('%s' % (str(np.mean(running_loss))))
                 writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
                 running_loss = []
-        for name, weight in model.named_parameters():
-            writer.add_histogram(name, weight, epoch)
-            writer.add_histogram(f'{name}.grad', weight.grad, epoch)
+        # for name, weight in model.named_parameters():
+        #     writer.add_histogram(name, weight, epoch)
+        #     writer.add_histogram(f'{name}.grad', weight.grad, epoch)
     return model
 
 # GOO dataset
@@ -285,9 +285,9 @@ def train_with_early_stopping(model, train_data_loader, valid_data_loader, crite
             break
 
 
-        for name, weight in model.named_parameters():
-            writer.add_histogram(name, weight, epoch)
-            writer.add_histogram(f'{name}.grad', weight.grad, epoch)
+        # for name, weight in model.named_parameters():
+        #     writer.add_histogram(name, weight, epoch)
+        #     writer.add_histogram(f'{name}.grad', weight.grad, epoch)
 
     return model
 
@@ -418,9 +418,9 @@ def train_gazefollow_with_early_stopping(model, train_data_loader, valid_data_lo
             break
 
 
-        for name, weight in model.named_parameters():
-            writer.add_histogram(name, weight, epoch)
-            writer.add_histogram(f'{name}.grad', weight.grad, epoch)
+        # for name, weight in model.named_parameters():
+        #     writer.add_histogram(name, weight, epoch)
+        #     writer.add_histogram(f'{name}.grad', weight.grad, epoch)
 
     return model
 
