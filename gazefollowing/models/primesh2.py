@@ -73,32 +73,39 @@ class Primesh2(nn.Module):
         self.scence_net = nn.Sequential(*(list(model.children())[:-2]))
 
         # midas
-        for param in midas.parameters():
+        # for param in midas.parameters():
+        #     param.requires_grad = False
+        # self.pretrained = midas.pretrained
+        # self.scratch = midas.scratch
+        self.depth = midas
+        for param in self.depth.parameters():
             param.requires_grad = False
-        self.pretrained = midas.pretrained
-        self.scratch = midas.scratch
 
 
 
     def forward(self, image, face, head_channel, object_channel):
         # monocular depth pathway
-        layer_1 = self.pretrained.layer1(image)
-        layer_2 = self.pretrained.layer2(layer_1)
-        layer_3 = self.pretrained.layer3(layer_2)
-        layer_4 = self.pretrained.layer4(layer_3)
-
-        layer_1_rn = self.scratch.layer1_rn(layer_1)
-        layer_2_rn = self.scratch.layer2_rn(layer_2)
-        layer_3_rn = self.scratch.layer3_rn(layer_3)
-        layer_4_rn = self.scratch.layer4_rn(layer_4)
-
-        path_4 = self.scratch.refinenet4(layer_4_rn)
-        path_3 = self.scratch.refinenet3(path_4, layer_3_rn)
-        path_2 = self.scratch.refinenet2(path_3, layer_2_rn)
-        path_1 = self.scratch.refinenet1(path_2, layer_1_rn)
-
-        midas_out = self.scratch.output_conv(path_1)
-        depth_object_channel = torch.mul(midas_out, object_channel)
+        # layer_1 = self.pretrained.layer1(image)
+        # layer_2 = self.pretrained.layer2(layer_1)
+        # layer_3 = self.pretrained.layer3(layer_2)
+        # layer_4 = self.pretrained.layer4(layer_3)
+        #
+        # layer_1_rn = self.scratch.layer1_rn(layer_1)
+        # layer_2_rn = self.scratch.layer2_rn(layer_2)
+        # layer_3_rn = self.scratch.layer3_rn(layer_3)
+        # layer_4_rn = self.scratch.layer4_rn(layer_4)
+        #
+        # path_4 = self.scratch.refinenet4(layer_4_rn)
+        # path_3 = self.scratch.refinenet3(path_4, layer_3_rn)
+        # path_2 = self.scratch.refinenet2(path_3, layer_2_rn)
+        # path_1 = self.scratch.refinenet1(path_2, layer_1_rn)
+        #
+        # midas_out = self.scratch.output_conv(path_1)
+        self.depth.eval()
+        with torch.no_grad():
+            depth_feat = self.depth(image)
+            depth_feat = depth_feat.view(-1, 1, 224, 224)
+        depth_object_channel = torch.mul(depth_feat, object_channel)
 
         # head pathway
         face_feat = self.face_net(face)
