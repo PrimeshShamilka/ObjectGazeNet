@@ -19,7 +19,7 @@ from models.shashimal2 import Shashimal2
 from models.primesh2 import Primesh2
 from models.__init__ import save_checkpoint, resume_checkpoint
 #from dataloader.shashimal2_synth import GooDataset
-from dataloader.shashimal2 import GooDataset
+from dataloader.primesh import GooDataset
 from dataloader.shashimal2 import GazeDataset
 from dataloader import chong_imutils
 from training.train_primesh import train, GazeOptimizer, train_with_early_stopping
@@ -35,11 +35,11 @@ logger = setup_logger(name='first_logger',
 batch_size=4
 workers=12
 images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
-pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/oneshotrealhumansNew.pickle'
+pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/oneshotrealhumansNew2.pickle'
 test_images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
-test_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle'
+test_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew2.pickle'
 val_images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
-val_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/valrealhumansNew.pickle'
+val_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/valrealhumansNew2.pickle'
 
 print ('Train')
 train_set = GooDataset(images_dir, pickle_path, 'train')
