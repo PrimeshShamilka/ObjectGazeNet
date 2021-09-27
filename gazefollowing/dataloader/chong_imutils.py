@@ -62,12 +62,11 @@ def get_head_box_channel(x_min, y_min, x_max, y_max, width, height, resolution, 
 def get_object_box_channel(gtboxes,width,height,resolution):
     channel = np.zeros((resolution,resolution), dtype=np.float32)
     for box in gtboxes:
-        obj_box = np.array([box[0]/width, box[1]/height, box[2]/width, box[3]/height])* resolution
+        obj_box = np.array([box[0], box[1], box[2], box[3]])* resolution
         obj_box = obj_box.astype(int)
-        obj_box = np.clip(obj_box, 0, resolution-1)
+        # obj_box = np.clip(obj_box, 0, resolution-1)
         channel[obj_box[1]:obj_box[3],obj_box[0]:obj_box[2]] = 1
     return torch.from_numpy(channel)    
-
 
 
 def draw_labelmap(img, pt, sigma, type='Gaussian'):

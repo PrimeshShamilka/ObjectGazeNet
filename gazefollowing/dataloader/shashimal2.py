@@ -268,12 +268,12 @@ class GooDataset(Dataset):
                                                  type='Gaussian')
 
         if self.training == 'test' and self.use_gtbox:
-            return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox, eyess
+            # return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox, eyess
+            return img, face, head_channel, object_channel,gaze_final,eye,gaze_idx,gt_bboxes,gt_labels
         elif self.training == 'test':
             return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, shifted_grids, gaze_final, eyess
         else:
             return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, image_path, gaze_inside , shifted_grids, gaze_final
-
 
 class GazeDataset(Dataset):
     def __init__(self, root_dir, mat_file, training='train', input_size=224, output_size=64,  include_path=False, imshow = False):

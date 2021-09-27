@@ -12,6 +12,7 @@ import numpy as np
 
 from tqdm import tqdm
 import cv2
+import matplotlib.pyplot as plt
 
 from early_stopping_pytorch.pytorchtools import EarlyStopping
 
@@ -489,6 +490,27 @@ def cal_auc_per_point(gt_point, pred_heatmap):
     return pred_heatmap, gt_heatmap
 
 
+def boxes2centers(normalized_boxes):
+    center_x = (normalized_boxes[:, 0] + normalized_boxes[:, 2]) / 2
+    center_y = (normalized_boxes[:, 1] + normalized_boxes[:, 3]) / 2
+    center_x = np.expand_dims(center_x, axis=1)
+    center_y = np.expand_dims(center_y, axis=1)
+    normalized_centers = np.hstack((center_x, center_y))
+    return normalized_centers
+
+
+def select_nearest_bbox(gazepoint, gt_bboxes):
+    centers = boxes2centers(gt_bboxes)
+    diff = centers - gazepoint
+    l2dist = np.sqrt(diff[:, 0] ** 2 + diff[:, 1] ** 2)
+    min_idx = np.argsort(l2dist)[:5]
+
+    nearest_box = {
+        'box': gt_bboxes[min_idx],
+        'index': min_idx
+    }
+    return nearest_box
+
 def test(model, test_data_loader, logger, save_output=False):
     model.eval()
     total_error = []
@@ -503,9 +525,8 @@ def test(model, test_data_loader, logger, save_output=False):
     all_predmap = []
 
     with torch.no_grad():
-        for i, (
-        img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final,
-        gtbox, eye) in tqdm(enumerate(test_data_loader), total=len(test_data_loader)):
+        for i, (img, face, head_channel, object_channel, gaze_final, eye, gaze_idx, gt_bboxes,
+                gt_labels) in tqdm(enumerate(test_data_loader), total=len(test_data_loader)):
             image = img.cuda()
             head_channel = head_channel.cuda()
             face = face.cuda()
@@ -544,5 +565,92 @@ def test(model, test_data_loader, logger, save_output=False):
     proxAcc = PA_count / len(test_data_loader.dataset)
     logger.info('proximate accuracy: %s' % str(proxAcc))
     logger.info('average error: %s' % str([auc, l2, ang]))
+
+    return [auc, l2, ang]
+
+# test with gaze object prediction
+def test_gop(model, test_data_loader, logger, save_output=False):
+    model.eval()
+    total_error = []
+    all_gt_heat = []
+    all_pred_heat = []
+
+    percent_dists = [0.01, 0.03, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+    PA_count = np.zeros((len(percent_dists)))
+
+    all_gazepoints = []
+    all_gtmap = []
+    all_predmap = []
+    all_auc = []
+    all_auc2 = []
+    all_label = []
+
+    with torch.no_grad():
+        for img, face, head_channel, object_channel, gaze_final, eye, gaze_idx, gt_bboxes, gt_labels in test_data_loader:
+            image = img.cuda()
+            head_channel = head_channel.cuda()
+            face = face.cuda()
+            object_channel = object_channel.cuda()
+            gt_bboxes = np.array(list(gt_bboxes))
+            gt_labels = np.array(list(gt_labels))
+            gaze_idx = np.array(gaze_idx)
+            outputs, raw_hm = model.raw_hm(image, face, head_channel, object_channel)
+            final_output = raw_hm.cpu().data.numpy()
+            pred_labels = outputs.max(1)[1]  # max function returns both values and indices. so max()[0] is values, max()[1] is indices
+            inputs_size = image.size(0)
+            for i in range(inputs_size):
+                distval, f_point = euclid_dist(pred_labels.data.cpu()[i], gaze_final[i])
+                ang_error = calc_ang_err(pred_labels[i], gaze_final[i], eye[i])
+                # auc_score = cal_auc(ground_labels[i], raw_hm[i, :, :])
+                predmap, gtmap = cal_auc(gaze_final[i], raw_hm[i, :, :])
+                bbox_data = select_nearest_bbox(f_point, gt_bboxes[:-1, i, :])
+                nearest_bbox = bbox_data['index']
+                min_id = 0
+                min_dist = np.NINF
+                for k, b in enumerate(bbox_data['box']):
+                    b = b * [640, 480, 640, 480]
+                    b = b.astype(int)
+                    contour = np.array([[b[0], b[1]], [b[0], b[3]], [b[2], b[3]], [b[2], b[1]]])
+                    dist = cv2.pointPolygonTest(contour, (f_point[0] * 640, f_point[1] * 480), True)
+                    if min_dist < dist:
+                        min_dist = dist
+                        min_id = k
+                if (gaze_idx[i] == nearest_bbox[0]):
+                    all_auc.append(1)
+                else:
+                    all_auc.append(0)
+                if (gaze_idx[i] == nearest_bbox[min_id]):
+                    all_auc2.append(1)
+                else:
+                    all_auc2.append(0)
+                gt_label = gt_labels[gaze_idx[i], i]
+                if (gt_label == gt_labels[nearest_bbox[0], i]):
+                    all_label.append(1)
+                else:
+                    all_label.append(0)
+                all_gazepoints.append(f_point)
+                all_predmap.append(predmap)
+                all_gtmap.append(gtmap)
+
+                PA_count[np.array(percent_dists) > distval.item()] += 1
+
+                total_error.append([distval, ang_error])
+
+        l2, ang = np.mean(np.array(total_error), axis=0)
+
+        all_gazepoints = np.vstack(all_gazepoints)
+        all_predmap = np.stack(all_predmap).reshape([-1])
+        all_gtmap = np.stack(all_gtmap).reshape([-1])
+        auc = roc_auc_score(all_gtmap, all_predmap)
+        box_auc = (sum(all_auc) / len(all_auc)) * 100
+        box_auc2 = (sum(all_auc2) / len(all_auc2)) * 100
+        label_auc = (sum(all_label) / len(all_label)) * 100
+
+    if save_output:
+        np.savez('predictions.npz', gazepoints=all_gazepoints)
+
+    proxAcc = PA_count / len(test_data_loader.dataset)
+    logger.info('proximate accuracy: %s' % str(proxAcc))
+    logger.info('average error: %s' % str([auc, l2, ang, box_auc, box_auc2, label_auc]))
 
     return [auc, l2, ang]

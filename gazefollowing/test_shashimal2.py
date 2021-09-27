@@ -22,8 +22,8 @@ from models.__init__ import save_checkpoint, resume_checkpoint
 #from dataloader.shashimal2_synth import GooDataset
 from dataloader.shashimal2 import GooDataset
 from dataloader import chong_imutils
-from training.train_shashimal2 import train, test, GazeOptimizer
-
+from training.train_shashimal2 import train, test, GazeOptimizer, test_gop
+from torch.nn.utils.rnn import pad_sequence
 
 
 logger = setup_logger(name='first_logger',
@@ -42,6 +42,22 @@ pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datas
 test_images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
 test_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle'
 
+def pad_x_collate_function(batch):
+    # batch looks like [(x0,y0), (x4,y4), (x2,y2)... ]
+    img, face, head_channel, object_channel,gaze_final,eye,gaze_idx,gt_bboxes,gt_labels = zip(*batch)
+
+    # If you want to be a little fancy, you can do the above in one line
+    # xs, ys = zip(*samples)
+    img = pad_sequence(img, batch_first=True, padding_value=0)
+    face = pad_sequence(face, batch_first=True, padding_value=0)
+    head_channel = pad_sequence(head_channel, batch_first=True, padding_value=0)
+    object_channel = pad_sequence(object_channel, batch_first=True, padding_value=0)
+    #eye = pad_sequence(eye, batch_first=True, padding_value=0)
+    #gaze = pad_sequence(gaze, batch_first=True, padding_value=0)
+    #gtbox = pad_sequence(gtbox, batch_first=True, padding_value=0)
+    #gt_bboxes = pad_sequence(gt_bboxes, batch_first=True, padding_value=0)
+    return img, face, head_channel, object_channel,gaze_final,eye,gaze_idx,zip(*gt_bboxes),zip(*gt_labels)
+
 train_set = GooDataset(images_dir, pickle_path, 'train')
 train_data_loader = DataLoader(dataset=train_set,
                                            batch_size=batch_size,
@@ -49,8 +65,8 @@ train_data_loader = DataLoader(dataset=train_set,
                                            num_workers=4)
 
 test_set = GooDataset(test_images_dir, test_pickle_path, 'test')
-test_data_loader = DataLoader(test_set, batch_size=batch_size//2,
-                            shuffle=False, num_workers=4)
+test_data_loader = DataLoader(test_set, batch_size=1,
+                            shuffle=False, num_workers=4, collate_fn=pad_x_collate_function)
 
 
 
@@ -78,15 +94,21 @@ learning_rate = 1e-4
 # Initializes Optimizer
 gaze_opt = GazeOptimizer(model_ft, learning_rate)
 optimizer = gaze_opt.getOptimizer(start_epoch)
+if True:
+    checkpoint_fpath = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/code/ObjectGazeNet/saved_weights/shashimal2_gazefollow_6_gooreal_16_chechkpoint_full.pt'
+    checkpoint = torch.load(checkpoint_fpath)
+    model_ft.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
 
-img, face, head_channel, object_channel,gaze_heatmap, image_path, gaze_inside,shifted_targets,gaze_final = next(iter(train_data_loader))
+# img, face, head_channel, object_channel,gaze_heatmap, image_path, gaze_inside,shifted_targets,gaze_final = next(iter(train_data_loader))
 
 from torch.utils.tensorboard import SummaryWriter
 
 # default `log_dir` is "runs" - we'll be more specific here
 writer = SummaryWriter('runs/shashimal2_pretrained')
 
-model_ft = train(model_ft,train_data_loader, criterion, optimizer, logger, writer,num_epochs=4)
+# model_ft = train(model_ft,train_data_loader, criterion, optimizer, logger, writer,num_epochs=4)
+test_gop(model_ft, test_data_loader, logger, save_output=False)
 
 
 

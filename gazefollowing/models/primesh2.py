@@ -126,7 +126,7 @@ class Primesh2(nn.Module):
         scene_feat = self.scence_net(im)
 
         # scene pathway + head pathway
-        attn_applied_scene_feat = torch.mul(attn_weights, scene_feat)
+        attn_applied_scene_feat = torch.mul(attn_weights, 8)
         scene_face_feat = torch.cat((attn_applied_scene_feat, face_feat), 1)
 
         # scene + face feat --> encoding
