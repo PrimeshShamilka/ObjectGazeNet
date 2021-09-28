@@ -133,7 +133,7 @@ def train(model,train_data_loader, criterion, optimizer, logger, writer ,num_epo
 
 
 
-def train_with_early_stopping(model, train_data_loader, criterion, optimizer, logger, writer, num_epochs=5, patience=5):
+def train_with_early_stopping(model, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=5, patience=5):
 
     # initialize the early_stopping object
     # patience = 20
@@ -184,7 +184,7 @@ def train_with_early_stopping(model, train_data_loader, criterion, optimizer, lo
         # validate the model
         model.eval()
         for i, (img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, image_path, gaze_inside, shifted_targets,
-                gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
+                gaze_final) in tqdm(enumerate(val_data_loader), total=len(val_data_loader)):
 
             image = img.cuda()
             head_channel = head_channel.cuda()
@@ -445,7 +445,7 @@ def test_gop(model, test_data_loader, logger, save_output=False):
                     if min_dist < dist:
                         min_dist = dist
                         min_id = k
-                # IOU
+                # bbox IOU using gtbox
                 max_id = 0
                 max_iou = 0
                 for k, b in enumerate(bbox_data['box']):
@@ -457,6 +457,7 @@ def test_gop(model, test_data_loader, logger, save_output=False):
                     if iou > max_iou:
                         max_iou = iou
                         max_id = k
+                # bbox IOU using heatmap
 
                 if (gaze_idx[i] == nearest_bbox[0]):
                     all_auc.append(1)
