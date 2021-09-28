@@ -192,6 +192,8 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
             object_channel = object_channel.cuda()
             shifted_targets = shifted_targets.cuda().squeeze()
 
+            optimizer.zero_grad()
+
             outputs = model(image, face, head_channel, object_channel)
             total_loss = criterion(outputs[0], shifted_targets[:, 0, :].max(1)[1])
             for j in range(1, len(outputs)):
@@ -199,7 +201,7 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
 
             total_loss = total_loss / (len(outputs) * 1.0)
 
-            valid_losses.append(total_loss.item)
+            valid_losses.append(total_loss.item())
 
         valid_loss = np.average(valid_losses)
         avg_valid_losses.append(valid_loss)
@@ -328,6 +330,20 @@ def bb_iou(boxA, boxB):
     assert iou <= 1.0
     return iou
 
+def get_bb_binary(gt_bboxes):
+    bbox_l = []
+    for i in range(gt_bboxes.shape[0]):
+        bbox = (gt_bboxes[i] * 224).astype(int)
+        xmin, ymin, xmax, ymax = bbox
+        b = np.zeros((224, 224), dtype='float32')
+        assert xmin < xmax
+        assert ymin < ymax
+        for j in range(ymin, ymax):
+            for k in range(xmin, xmax):
+                b[j][k] = 1
+        bbox_l.append(b)
+    return bbox_l
+
 def test(model, test_data_loader, logger, save_output=False):
     model.eval()
     total_error = []
@@ -401,6 +417,7 @@ def test_gop(model, test_data_loader, logger, save_output=False):
     all_auc2 = []
     all_label = []
     all_iou = []
+    all_overlap = []
 
     with torch.no_grad():
         count=0
@@ -446,7 +463,7 @@ def test_gop(model, test_data_loader, logger, save_output=False):
                         min_dist = dist
                         min_id = k
                 # bbox IOU using gtbox
-                max_id = 0
+                max_id = -1
                 max_iou = 0
                 for k, b in enumerate(bbox_data['box']):
                     b = b * [640, 480, 640, 480]
@@ -458,25 +475,47 @@ def test_gop(model, test_data_loader, logger, save_output=False):
                         max_iou = iou
                         max_id = k
                 # bbox IOU using heatmap
+                nearest_box_binary = get_bb_binary(bbox_data['box'])
+                heatmap = outputs.view(-1, 227, 227).squeeze().detach().cpu().numpy()
+                heatmap = np.resize(heatmap, (224,224)).clip(min=0)
+                max_overlap = 0
+                max_overlap_id = -1
+                for k, b in enumerate(nearest_box_binary):
+                    overlap = np.sum(np.multiply(b, heatmap))
+                    if overlap > max_overlap:
+                        max_overlap = overlap
+                        max_overlap_id = k
 
+                # nearest box by center
                 if (gaze_idx[i] == nearest_bbox[0]):
                     all_auc.append(1)
                 else:
                     all_auc.append(0)
+                # nearest box by distance to box
                 if (gaze_idx[i] == nearest_bbox[min_id]):
                     all_auc2.append(1)
                 else:
                     all_auc2.append(0)
+                # nearest box by label
                 gt_label = gt_labels[gaze_idx[i], i]
                 if (gt_label == gt_labels[nearest_bbox[0], i]):
                     all_label.append(1)
                 else:
                     all_label.append(0)
-                if (gt_label == nearest_bbox[max_id]):
+                # nearest box by box_iou
+                if max_id == -1:
+                    all_iou.append(0)
+                elif (gaze_idx[i] == nearest_bbox[max_id]):
                     all_iou.append(1)
                 else:
                     all_iou.append(0)
-
+                # nearest box by heatmap overlap
+                if max_overlap_id == -1:
+                    all_overlap.append(0)
+                elif (gaze_idx[i] == nearest_bbox[max_overlap_id]):
+                    all_overlap.append(1)
+                else:
+                    all_overlap.append(0)
                 all_gazepoints.append(f_point)
                 all_predmap.append(predmap)
                 all_gtmap.append(gtmap)
@@ -493,12 +532,13 @@ def test_gop(model, test_data_loader, logger, save_output=False):
         box_auc2 = (sum(all_auc2) / len(all_auc2)) * 100
         label_auc = (sum(all_label) / len(all_label)) * 100
         iou_auc = (sum(all_iou) / len(all_iou)) * 100
+        overlap_auc = (sum(all_overlap) / len(all_overlap)) * 100
 
     if save_output:
         np.savez('predictions.npz', gazepoints=all_gazepoints)
 
     proxAcc = PA_count / len(test_data_loader.dataset)
     logger.info('proximate accuracy: %s' % str(proxAcc))
-    logger.info('average error: %s' % str([auc, l2, ang, box_auc, box_auc2, label_auc, iou_auc]))
+    logger.info('average error: %s' % str([auc, l2, ang, box_auc, box_auc2, label_auc, iou_auc, overlap_auc]))
 
     return [auc, l2, ang]
