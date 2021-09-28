@@ -190,7 +190,7 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
             head_channel = head_channel.cuda()
             face = face.cuda()
             object_channel = object_channel.cuda()
-            shifted_targets = shifted_targets.cuda().squeeze()
+            shifted_targets = shifted_targets.cuda().squeeze(1)
 
             optimizer.zero_grad()
 
