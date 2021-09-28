@@ -132,10 +132,10 @@ def train(model,train_data_loader, criterion, optimizer, logger, writer ,num_epo
 
 
 
-def train_with_early_stopping(model, train_data_loader, criterion, optimizer, logger, writer, num_epochs=5, ):
+def train_with_early_stopping(model, train_data_loader, criterion, optimizer, logger, writer, num_epochs=5, patience=5):
 
     # initialize the early_stopping object
-    patience = 20
+    # patience = 20
     early_stopping = EarlyStopping(patience=patience, verbose=True)
 
     since = time.time()
@@ -175,7 +175,7 @@ def train_with_early_stopping(model, train_data_loader, criterion, optimizer, lo
             inputs_size = image.size(0)
 
             running_loss.append(total_loss.item())
-            if i % 100 == 99:
+            if i % 50 == 49:
                 logger.info('%s' % (str(np.mean(running_loss))))
                 writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
                 running_loss = []
@@ -211,16 +211,18 @@ def train_with_early_stopping(model, train_data_loader, criterion, optimizer, lo
 
         valid_losses = []
 
+        writer.add_scalar('validation_loss', valid_loss, epoch * n_total_steps)
+
         # early stopping detector
-        early_stopping(valid_loss, model)
+        early_stopping(valid_loss, model, optimizer, epoch, logger)
         if early_stopping.early_stop:
             print("Early stopping")
             break
 
 
-        for name, weight in model.named_parameters():
-            writer.add_histogram(name, weight, epoch)
-            writer.add_histogram(f'{name}.grad', weight.grad, epoch)
+        # for name, weight in model.named_parameters():
+        #     writer.add_histogram(name, weight, epoch)
+        #     writer.add_histogram(f'{name}.grad', weight.grad, epoch)
 
     return model
 
