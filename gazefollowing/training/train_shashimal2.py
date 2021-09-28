@@ -413,14 +413,14 @@ def test_gop(model, test_data_loader, logger, save_output=False):
             gaze_idx = np.array(gaze_idx)
             outputs, raw_hm = model.raw_hm(image, face, head_channel, object_channel)
             # overlay output on image
-            hm = outputs.view(-1, 227, 227)
-            hm = hm.squeeze().detach().cpu().numpy()
-            hm = np.resize(hm, (224,224))
-            i = img.squeeze().detach().cpu().numpy().transpose(1,2,0)
-            plt.imshow(i)
-            plt.imshow(hm, 'jet', interpolation='none', alpha=0.5)
-            count+=1
-            plt.savefig('heatmap/overlay' + str(count) + '.png')
+            # hm = outputs.view(-1, 227, 227)
+            # hm = hm.squeeze().detach().cpu().numpy()
+            # hm = np.resize(hm, (224,224))
+            # i = img.squeeze().detach().cpu().numpy().transpose(1,2,0)
+            # plt.imshow(i)
+            # plt.imshow(hm, 'jet', interpolation='none', alpha=0.5)
+            # count+=1
+            # plt.savefig('heatmap/overlay' + str(count) + '.png')
 
             final_output = raw_hm.cpu().data.numpy()
             pred_labels = outputs.max(1)[1]  # max function returns both values and indices. so max()[0] is values, max()[1] is indices
