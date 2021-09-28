@@ -96,7 +96,8 @@ def train(model,train_data_loader, criterion, optimizer, logger, writer ,num_epo
         running_loss = []
 
         # Iterate over data.
-        for i, (img, face, head_channel, object_channel,gaze_heatmap, image_path, gaze_inside,shifted_targets,gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)) :
+        for i, (img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, image_path, gaze_inside, shifted_targets,
+                gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
             image = img.cuda()
             head_channel =  head_channel.cuda()
             face = face.cuda()
@@ -125,9 +126,9 @@ def train(model,train_data_loader, criterion, optimizer, logger, writer ,num_epo
                 logger.info('%s'%(str(np.mean(running_loss))))
                 writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
                 running_loss = [] 
-        for name, weight in model.named_parameters():
-            writer.add_histogram(name,weight, epoch)
-            writer.add_histogram(f'{name}.grad',weight.grad, epoch)
+        # for name, weight in model.named_parameters():
+        #     writer.add_histogram(name,weight, epoch)
+        #     writer.add_histogram(f'{name}.grad',weight.grad, epoch)
     return model
 
 
