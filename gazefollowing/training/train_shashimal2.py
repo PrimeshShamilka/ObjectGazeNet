@@ -149,7 +149,7 @@ def train_with_early_stopping(model, train_data_loader, criterion, optimizer, lo
         avg_valid_losses = []
 
         # Iterate over data.
-        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
+        for i, (img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, image_path, gaze_inside, shifted_targets,
                 gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
             image = img.cuda()
             head_channel = head_channel.cuda()
@@ -182,7 +182,7 @@ def train_with_early_stopping(model, train_data_loader, criterion, optimizer, lo
 
         # validate the model
         model.eval()
-        for i, (img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside, shifted_targets,
+        for i, (img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, image_path, gaze_inside, shifted_targets,
                 gaze_final) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)):
 
             image = img.cuda()

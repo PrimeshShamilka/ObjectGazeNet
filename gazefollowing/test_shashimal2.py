@@ -22,7 +22,7 @@ from models.__init__ import save_checkpoint, resume_checkpoint
 #from dataloader.shashimal2_synth import GooDataset
 from dataloader.shashimal2 import GooDataset
 from dataloader import chong_imutils
-from training.train_shashimal2 import train, test, GazeOptimizer, test_gop
+from training.train_shashimal2 import train, test, GazeOptimizer, test_gop, train_with_early_stopping
 from torch.nn.utils.rnn import pad_sequence
 
 
@@ -107,8 +107,8 @@ from torch.utils.tensorboard import SummaryWriter
 # default `log_dir` is "runs" - we'll be more specific here
 writer = SummaryWriter('runs/shashimal2_pretrained')
 
-# model_ft = train(model_ft,train_data_loader, criterion, optimizer, logger, writer,num_epochs=4)
-test_gop(model_ft, test_data_loader, logger, save_output=False)
+model_ft = train_with_early_stopping(model_ft,train_data_loader, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
+# test_gop(model_ft, test_data_loader, logger, save_output=False)
 
 
 
