@@ -206,3 +206,4 @@ class Shashimal2(nn.Module):
 
         #main.py /training must use this
         return hm_base.view(-1, 227 * 227), raw_hm
+        # return hm_base, raw_hm

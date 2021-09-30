@@ -85,6 +85,9 @@ test_set = GooDataset(test_images_dir, test_pickle_path, 'test')
 test_data_loader = DataLoader(test_set, batch_size=batch_size//2,
                             shuffle=False, num_workers=8, collate_fn=pad_x_collate_function)
 
+
+
+# Load Model
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
@@ -114,9 +117,9 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('runs/primesh')
 
 
-# model_ft2 = train(model_ft2,train_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
+model_ft2 = train(model_ft2,train_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
 # model_ft2 = train_with_early_stopping(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=5)
 
 # test(model_ft2, test_data_loader,logger, save_output=False)
 # img, face, head_channel, object_channel, eyes_loc, gaze_heatmap, image_path, gaze_inside, shifted_targets, gaze_final = next(iter(train_data_loader))
-test_gop(model_ft2, test_data_loader, logger, save_output=False)
+# test_gop(model_ft2, test_data_loader, logger, save_output=False)

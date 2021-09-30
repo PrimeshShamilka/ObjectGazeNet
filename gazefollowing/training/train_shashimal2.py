@@ -333,11 +333,11 @@ def bb_iou(boxA, boxB):
 def get_bb_binary(gt_bboxes):
     bbox_l = []
     for i in range(gt_bboxes.shape[0]):
-        bbox = (gt_bboxes[i] * 224).astype(int)
+        bbox = (gt_bboxes[i][0] * 224).astype(int)
         xmin, ymin, xmax, ymax = bbox
         b = np.zeros((224, 224), dtype='float32')
-        assert xmin < xmax
-        assert ymin < ymax
+        # assert xmin < xmax
+        # assert ymin < ymax
         for j in range(ymin, ymax):
             for k in range(xmin, xmax):
                 b[j][k] = 1
@@ -475,7 +475,7 @@ def test_gop(model, test_data_loader, logger, save_output=False):
                         max_iou = iou
                         max_id = k
                 # bbox IOU using heatmap
-                nearest_box_binary = get_bb_binary(bbox_data['box'])
+                nearest_box_binary = get_bb_binary(gt_bboxes)
                 heatmap = outputs.view(-1, 227, 227).squeeze().detach().cpu().numpy()
                 heatmap = np.resize(heatmap, (224,224)).clip(min=0)
                 max_overlap = 0
@@ -512,7 +512,7 @@ def test_gop(model, test_data_loader, logger, save_output=False):
                 # nearest box by heatmap overlap
                 if max_overlap_id == -1:
                     all_overlap.append(0)
-                elif (gaze_idx[i] == nearest_bbox[max_overlap_id]):
+                elif gaze_idx[i] == max_overlap_id:
                     all_overlap.append(1)
                 else:
                     all_overlap.append(0)

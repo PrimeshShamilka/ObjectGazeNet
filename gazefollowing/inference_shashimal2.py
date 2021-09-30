@@ -29,7 +29,6 @@ from models.gazenet import GazeNet
 from models.__init__ import save_checkpoint, resume_checkpoint
 from dataloader.shashimal2 import GooDataset, GazeDataset
 from torch.utils.data import Dataset, DataLoader
-
 from models.shashimal2 import Shashimal2
 # from scipy.misc import imresize
 import time
