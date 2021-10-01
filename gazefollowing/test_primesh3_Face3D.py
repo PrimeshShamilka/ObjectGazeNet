@@ -101,7 +101,9 @@ test_data_loader = DataLoader(test_set, batch_size=batch_size//2,
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model_ft2 = Shashimal6_Face3D()
 model_ft2 = model_ft2.to(device)
-criterion = nn.NLLLoss().cuda()
+# criterion = nn.NLLLoss().cuda()
+# criterion = nn.BCELoss().cuda()
+criterion = nn.MSELoss()
 # criterion
 
 # Observe that all parameters are being optimized
