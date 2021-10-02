@@ -129,3 +129,27 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
             break
 
     return model
+
+
+def test_face3d(model, test_data_loader, logger, save_output=False):
+    model.eval()
+    angle_error = []
+    with torch.no_grad():
+        for img, face, location_channel,object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox in test_data_loader:
+            image =  img.cuda()
+            face = face.cuda()
+            gaze,depth = model(image,face)
+            depth =  depth.cpu().data.numpy()
+            gaze =  gaze.cpu().data.numpy()
+            label = np.zeros((image.shape[0],3))
+            for i in range(image.shape[0]):
+                gt = (gt_label[i] - head[i])/224
+                label[i,0] = gt[0]
+                label[i,1] = gt[1]
+                label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])/224
+            for i in range(img.shape[0]):
+                ae = np.arccos(np.dot(gaze[i,:],label[i,:])/np.sqrt(np.dot(label[i,:],label[i,:])*np.dot(gaze[i,:],gaze[i,:])))
+                ae = np.maximum(np.minimum(ae,1.0),-1.0) * 180 / np.pi
+                angle_error.append(ae)
+        angle_error = np.mean(np.array(angle_error),axis=0)
+    print(angle_error)
