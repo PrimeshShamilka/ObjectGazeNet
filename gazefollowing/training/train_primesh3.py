@@ -70,7 +70,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
                 head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary==1)
                 gt_depth = torch.sum(gtbox_depth) / torch.sum(gtbox_binary==1)
                 label[i, 2] = (gt_depth - head_depth)
-                # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
+                label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             label = torch.tensor(label, dtype=torch.float)
             gaze = gaze.cpu()
             loss = criterion(gaze, label)
@@ -112,7 +112,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
                 head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary == 1)
                 gt_depth = torch.sum(gtbox_depth) / torch.sum(gtbox_binary == 1)
                 label[i, 2] = (gt_depth - head_depth)
-                # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
+                label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             label = torch.tensor(label, dtype=torch.float)
             gaze = gaze.cpu()
             loss = criterion(gaze, label)
@@ -161,7 +161,7 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
                 label[i, 2] = (gt_depth - head_depth)
                 # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             for i in range(img.shape[0]):
-                if test_depth:
+                if test_depth == True:
                     ae = np.arccos(np.dot(gaze[i,:],label[i,:])/np.sqrt(np.dot(label[i,:],label[i,:])*np.dot(gaze[i,:],gaze[i,:])))
                 else:
                     ae = np.arccos(np.dot(gaze[i,:2],label[i,:2])/np.sqrt(np.dot(label[i,:2],label[i,:2])*np.dot(gaze[i,:2], gaze[i,:2])))
