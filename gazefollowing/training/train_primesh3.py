@@ -165,7 +165,7 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
                     ae = np.dot(gaze[i,:],label[i,:])/np.sqrt(np.dot(label[i,:],label[i,:])*np.dot(gaze[i,:],gaze[i,:]))
                 else:
                     ae = np.dot(gaze[i,:2],label[i,:2])/np.sqrt(np.dot(label[i,:2],label[i,:2])*np.dot(gaze[i,:2], gaze[i,:2]))
-                ae = np.across(np.maximum(np.minimum(ae,1.0),-1.0)) * 180 / np.pi
+                ae = np.arccos(np.maximum(np.minimum(ae,1.0),-1.0)) * 180 / np.pi
                 angle_error.append(ae)
         angle_error = np.mean(np.array(angle_error),axis=0)
     print(angle_error)
