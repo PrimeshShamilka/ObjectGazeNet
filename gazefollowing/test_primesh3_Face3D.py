@@ -26,7 +26,7 @@ from models.primesh3 import Shashimal6_Face3D, Shashimal6_FaceDepth
 from dataloader.shashimal6 import GooDataset
 from dataloader import chong_imutils
 # from training.train_primesh import train, GazeOptimizer, train_with_early_stopping, test_gop, test
-from training.train_primesh3 import train_face3d, GazeOptimizer, test_face3d, train_face_depth
+from training.train_primesh3 import train_face3d, GazeOptimizer, test_face3d, train_face_depth, test_face_depth
 from torch.nn.utils.rnn import pad_sequence
 
 logger = setup_logger(name='first_logger',
@@ -127,4 +127,5 @@ writer = SummaryWriter('runs/face_3d')
 
 # train_face3d(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
 # test_face3d(model_ft2, test_data_loader, logger, test_depth=False)
-train_face_depth(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
+# train_face_depth(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
+test_face_depth(model_ft2, test_data_loader, logger)
