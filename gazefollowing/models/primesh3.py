@@ -98,10 +98,11 @@ class Shashimal6_FaceDepth(nn.Module):
         self.img_feature_dim = 256  # the dimension of the CNN feature to represent each frame
         self.base_model = resnet50(pretrained=True)
         self.base_model.fc2 = nn.Linear(1000, self.img_feature_dim)
-        self.fc1 = nn.Linear(self.img_feature_dim, 128)
-        self.fc2 = nn.Linear(128, 56)
-        self.last_layer = nn.Linear(56, 1)
-        self.sigmoid = nn.Sigmoid()
+        self.last_layer = nn.Linear(self.img_feature_dim, 1)
+        # self.fc1 = nn.Linear(self.img_feature_dim, 128)
+        # self.fc2 = nn.Linear(128, 56)
+        # self.last_layer = nn.Linear(56, 1)
+        # self.sigmoid = nn.Sigmoid()
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, image, face):
@@ -111,9 +112,10 @@ class Shashimal6_FaceDepth(nn.Module):
             id = torch.nn.functional.interpolate(id.unsqueeze(1),size=image.shape[2:],mode="bicubic",align_corners=False,)
         base_out = self.base_model(face)
         base_out = torch.flatten(base_out, start_dim=1)
-        base_out = self.relu(self.fc1(base_out))
-        base_out = self.relu(self.fc2(base_out))
-        output = self.sigmoid(self.last_layer(base_out))
+        # base_out = self.relu(self.fc1(base_out))
+        # base_out = self.relu(self.fc2(base_out))
+        # output = self.sigmoid(self.last_layer(base_out))
+        output = self.last_layer(base_out)
         return output,id
 
 '''
