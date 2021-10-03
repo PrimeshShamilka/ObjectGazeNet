@@ -94,7 +94,13 @@ class Shashimal6_Face3D(nn.Module):
 class Shashimal6_FaceDepth(nn.Module):
     def __init__(self):
         super(Shashimal6_FaceDepth, self).__init__()
-        self.depth = torch.hub.load("intel-isl/MiDaS", "DPT_Hybrid")
+        self.model_type = "DPT_Large"
+        self.depth = torch.hub.load("intel-isl/MiDaS", self.model_type)
+        self.midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
+        if self.model_type == "DPT_Large" or self.model_type == "DPT_Hybrid":
+            self.transform = self.midas_transforms.dpt_transform
+        else:
+            self.transform = self.midas_transforms.small_transform
         self.img_feature_dim = 256  # the dimension of the CNN feature to represent each frame
         self.base_model = resnet50(pretrained=True)
         self.base_model.fc2 = nn.Linear(1000, self.img_feature_dim)
@@ -108,6 +114,7 @@ class Shashimal6_FaceDepth(nn.Module):
     def forward(self, image, face):
         self.depth.eval()
         with torch.no_grad():
+            # image = self.transform(image)
             id = self.depth(image)
             id = torch.nn.functional.interpolate(id.unsqueeze(1),size=image.shape[2:],mode="bicubic",align_corners=False,)
         base_out = self.base_model(face)

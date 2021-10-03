@@ -127,5 +127,5 @@ writer = SummaryWriter('runs/face_3d')
 
 # train_face3d(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
 # test_face3d(model_ft2, test_data_loader, logger, test_depth=False)
-# train_face_depth(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
-test_face_depth(model_ft2, test_data_loader, logger)
+train_face_depth(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
+# test_face_depth(model_ft2, test_data_loader, logger)
