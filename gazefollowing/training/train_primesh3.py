@@ -70,7 +70,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
                 head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary==1)
                 gt_depth = torch.sum(gtbox_depth) / torch.sum(gtbox_binary==1)
                 label[i, 2] = (gt_depth - head_depth)
-                label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
+                # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             label = torch.tensor(label, dtype=torch.float)
             gaze = gaze.cpu()
             loss = criterion(gaze, label)
@@ -169,3 +169,96 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
                 angle_error.append(ae)
         angle_error = np.mean(np.array(angle_error),axis=0)
     print(angle_error)
+
+
+
+def train_face_depth(model,train_data_loader,validation_data_loader, criterion, optimizer, logger, writer ,num_epochs=5,patience=10):
+    since = time.time()
+    n_total_steps = len(train_data_loader)
+    n_total_steps_val = len(validation_data_loader)
+    early_stopping = EarlyStopping(patience=patience, verbose=True)
+    for epoch in range(num_epochs):
+
+        model.train()  # Set model to training mode
+
+        running_loss = []
+        validation_loss = []
+        for i, (img, face, location_channel,object_channel,head_channel ,head,gt_label,gaze_heatmap, head_box, gtbox) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)) :
+            image =  img.cuda()
+            face = face.cuda()
+            gt_label = gt_label
+            head = head
+            optimizer.zero_grad()
+            gaze,depth = model(image,face)
+            depth = depth.cpu()
+            max_depth = torch.max(depth)
+            depth = depth / max_depth
+            head_box = head_box.cpu().detach().numpy()*224
+            head_box = head_box.astype(int)
+            gtbox = gtbox.cpu().detach().numpy()*224
+            gtbox = gtbox.astype(int)
+            label = np.zeros((image.shape[0],1))
+            for i in range(image.shape[0]):
+                # gt = (gt_label[i] - head[i])/224
+                hbox_binary = torch.from_numpy(get_bb_binary(head_box[i]))
+                gtbox_binary = torch.from_numpy(get_bb_binary(gtbox[i]))
+                hbox_depth = torch.mul(depth[i], hbox_binary)
+                gtbox_depth = torch.mul(depth[i], gtbox_binary)
+                head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary==1)
+                gt_depth = torch.sum(gtbox_depth) / torch.sum(gtbox_binary==1)
+                label[i, 0] = (gt_depth - head_depth)
+            label = torch.tensor(label, dtype=torch.float)
+            gaze = gaze.cpu()
+            loss = criterion(gaze, label)
+            loss.backward()
+            optimizer.step()
+            running_loss.append(loss.item())
+
+            if i % 10 == 9:
+                logger.info('%s'%(str(np.mean(running_loss))))
+                writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
+                running_loss = []
+
+
+         # Validation
+        model.eval()
+        for i, (img, face, location_channel,object_channel,head_channel ,head,gt_label,gaze_heatmap, head_box, gtbox) in tqdm(enumerate(validation_data_loader), total=len(validation_data_loader)) :
+            image =  img.cuda()
+            face = face.cuda()
+            gt_label = gt_label
+            head = head
+            optimizer.zero_grad()
+            gaze,depth = model(image,face)
+            depth = depth.cpu()
+            max_depth = torch.max(depth)
+            depth = depth / max_depth
+            head_box = head_box.cpu().detach().numpy()*224
+            head_box = head_box.astype(int)
+            gtbox = gtbox.cpu().detach().numpy()*224
+            gtbox = gtbox.astype(int)
+            label = np.zeros((image.shape[0],1))
+            for i in range(image.shape[0]):
+                # gt = (gt_label[i] - head[i])/224
+                hbox_binary = torch.from_numpy(get_bb_binary(head_box[i]))
+                gtbox_binary = torch.from_numpy(get_bb_binary(gtbox[i]))
+                hbox_depth = torch.mul(depth[i], hbox_binary)
+                gtbox_depth = torch.mul(depth[i], gtbox_binary)
+                head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary==1)
+                gt_depth = torch.sum(gtbox_depth) / torch.sum(gtbox_binary==1)
+                label[i, 0] = (gt_depth - head_depth)
+            label = torch.tensor(label, dtype=torch.float)
+            gaze = gaze.cpu()
+            loss = criterion(gaze, label)
+            validation_loss.append(loss.item())
+        val_loss = np.mean(validation_loss)
+
+        logger.info('%s'%(str(val_loss)))
+        writer.add_scalar('validation_loss',val_loss,epoch)
+        validation_loss = []
+
+        early_stopping(val_loss, model, optimizer, epoch, logger)
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+
+    return model

@@ -20,13 +20,13 @@ from models.shashimal2 import Shashimal2
 from models.primesh3 import DualAttention
 from models.primesh2 import Primesh2
 from models.__init__ import save_checkpoint, resume_checkpoint
-from models.primesh3 import Shashimal6_Face3D
+from models.primesh3 import Shashimal6_Face3D, Shashimal6_FaceDepth
 # from dataloader.shashimal2_synth import GooDataset
 # from dataloader.primesh import GooDataset
 from dataloader.shashimal6 import GooDataset
 from dataloader import chong_imutils
 # from training.train_primesh import train, GazeOptimizer, train_with_early_stopping, test_gop, test
-from training.train_primesh3 import train_face3d, GazeOptimizer, test_face3d
+from training.train_primesh3 import train_face3d, GazeOptimizer, test_face3d, train_face_depth
 from torch.nn.utils.rnn import pad_sequence
 
 logger = setup_logger(name='first_logger',
@@ -99,7 +99,8 @@ test_data_loader = DataLoader(test_set, batch_size=batch_size//2,
 
 # Load model for training
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model_ft2 = Shashimal6_Face3D()
+# model_ft2 = Shashimal6_Face3D()
+model_ft2 = Shashimal6_FaceDepth()
 model_ft2 = model_ft2.to(device)
 # criterion = nn.NLLLoss().cuda()
 # criterion = nn.BCELoss().cuda()
@@ -125,4 +126,5 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('runs/face_3d')
 
 # train_face3d(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
-test_face3d(model_ft2, test_data_loader, logger, test_depth=False)
+# test_face3d(model_ft2, test_data_loader, logger, test_depth=False)
+train_face_depth(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
