@@ -89,7 +89,7 @@ class Shashimal6_Face3D(nn.Module):
             id = torch.nn.functional.interpolate(id.unsqueeze(1),size=image.shape[2:],mode="bicubic",align_corners=False,)
         base_out = self.base_model(face)
         base_out = torch.flatten(base_out, start_dim=1)
-        output = self.tanh(self.last_layer(base_out))
+        output = self.last_layer(base_out)
         return output,id
 
 class Shashimal6_FaceDepth(nn.Module):
