@@ -75,7 +75,7 @@ class CameraCalibrator(nn.Module):
 class Shashimal6_Face3D(nn.Module):
     def __init__(self):
         super(Shashimal6_Face3D, self).__init__()
-        self.depth = torch.hub.load("intel-isl/MiDaS", "DPT_Large")
+        self.depth = torch.hub.load("intel-isl/MiDaS", "DPT_Hybrid")
         self.img_feature_dim = 256  # the dimension of the CNN feature to represent each frame
         self.base_model = resnet50(pretrained=True)
         self.base_model.fc2 = nn.Linear(1000, self.img_feature_dim)
@@ -89,12 +89,38 @@ class Shashimal6_Face3D(nn.Module):
         with torch.no_grad():
             id = self.depth(image)
             id = torch.nn.functional.interpolate(id.unsqueeze(1),size=image.shape[2:],mode="bicubic",align_corners=False,)
-        out = self.backbone(face)
-        out = self.fc2(out)
-        # base_out = self.base_model(face)
-        # base_out = torch.flatten(base_out, start_dim=1)
-        output = self.last_layer(out)
+        # out = self.backbone(face)
+        # out = self.fc2(out)
+        base_out = self.base_model(face)
+        base_out = torch.flatten(base_out, start_dim=1)
+        output = self.last_layer(base_out)
         return output,id
+
+
+class Shashimal6_Face3D_Bias(nn.Module):
+    def __init__(self):
+        super(Shashimal6_Face3D_Bias, self).__init__()
+        self.depth = torch.hub.load("intel-isl/MiDaS", "DPT_Hybrid")
+        self.img_feature_dim = 256  # the dimension of the CNN feature to represent each frame
+        self.base_model = resnet50(pretrained=True)
+        self.base_model.fc2 = nn.Linear(1000, self.img_feature_dim)
+        self.last_layer = nn.Linear(self.img_feature_dim, 4)
+        self.tanh = nn.Tanh()
+        self.backbone = resnest50(pretrained=True)
+        self.fc2 = nn.Linear(1000, self.img_feature_dim)
+
+    def forward(self, image, face):
+        self.depth.eval()
+        with torch.no_grad():
+            id = self.depth(image)
+            id = torch.nn.functional.interpolate(id.unsqueeze(1),size=image.shape[2:],mode="bicubic",align_corners=False,)
+        base_out = self.base_model(face)
+        base_out = torch.flatten(base_out, start_dim=1)
+        output = self.last_layer(base_out)
+        bias = math.pi*nn.Sigmoid()(output[:, 3:])
+        bias = bias.view(-1, 1).expand(bias.size(0), 3)
+        output = output[:, :3]
+        return output, bias, id
 
 class Shashimal6_FaceDepth(nn.Module):
     def __init__(self):
