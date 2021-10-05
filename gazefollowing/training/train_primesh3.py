@@ -413,3 +413,42 @@ def train_face3d_bias(model,train_data_loader,validation_data_loader, criterion,
             break
 
     return model
+
+
+def test_face3d_bias(model, test_data_loader, logger, test_depth=True, save_output=False):
+    model.eval()
+    angle_error = []
+    with torch.no_grad():
+        for img, face, location_channel,object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox in test_data_loader:
+            image =  img.cuda()
+            face = face.cuda()
+            gaze, bias, depth = model(image,face)
+            max_depth = torch.max(depth)
+            depth = depth / max_depth
+            depth =  depth.cpu()
+            gaze =  gaze.cpu().data.numpy()
+            head_box = head_box.cpu().detach().numpy() * 224
+            head_box = head_box.astype(int)
+            gtbox = gtbox.cpu().detach().numpy() * 224
+            gtbox = gtbox.astype(int)
+            label = np.zeros((image.shape[0],3))
+            for i in range(image.shape[0]):
+                gt = (gt_label[i] - head[i])/224
+                label[i,0] = gt[0]
+                label[i,1] = gt[1]
+                hbox_binary = torch.from_numpy(get_bb_binary(head_box[i]))
+                gtbox_binary = torch.from_numpy(get_bb_binary(gtbox[i]))
+                hbox_depth = torch.mul(depth[i], hbox_binary)
+                gtbox_depth = torch.mul(depth[i], gtbox_binary)
+                head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary == 1)
+                gt_depth = torch.sum(gtbox_depth) / torch.sum(gtbox_binary == 1)
+                label[i, 2] = (gt_depth - head_depth)
+            for i in range(img.shape[0]):
+                if test_depth == True:
+                    ae = np.dot(gaze[i,:],label[i,:])/np.sqrt(np.dot(label[i,:],label[i,:])*np.dot(gaze[i,:],gaze[i,:]))
+                else:
+                    ae = np.dot(gaze[i,:2],label[i,:2])/np.sqrt(np.dot(label[i,:2],label[i,:2])*np.dot(gaze[i,:2], gaze[i,:2]))
+                ae = np.arccos(np.maximum(np.minimum(ae,1.0),-1.0)) * 180 / np.pi
+                angle_error.append(ae)
+        angle_error = np.mean(np.array(angle_error),axis=0)
+    print(angle_error)
