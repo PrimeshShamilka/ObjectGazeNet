@@ -462,6 +462,7 @@ def test_gop(model, test_data_loader, logger, save_output=False):
                     if min_dist < dist:
                         min_dist = dist
                         min_id = k
+
                 # bbox IOU using gtbox
                 max_id = -1
                 max_iou = 0

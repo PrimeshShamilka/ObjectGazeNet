@@ -188,6 +188,92 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
     print(angle_error)
 
 
+def train_face3d_gazefollow(model,train_data_loader,validation_data_loader, criterion, optimizer, logger, writer ,num_epochs=5,patience=10):
+    since = time.time()
+    n_total_steps = len(train_data_loader)
+    n_total_steps_val = len(validation_data_loader)
+    early_stopping = EarlyStopping(patience=patience, verbose=True)
+    loss_amp = 10
+
+    for epoch in range(num_epochs):
+
+        model.train()  # Set model to training mode
+
+        running_loss = []
+        validation_loss = []
+
+        for i, (img, face, head_point, gt_point) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)) :
+            image =  img.cuda()
+            face = face.cuda()
+            gt_label = gt_point
+            head = head_point
+            optimizer.zero_grad()
+            gaze,depth = model(image,face)
+            depth =  depth.cpu()
+            max_depth = torch.max(depth)
+            depth = depth / max_depth
+            label = np.zeros((image.shape[0],3))
+            for i in range(image.shape[0]):
+                gt = (gt_label[i] - head[i])
+                label[i,0] = gt[0]
+                label[i,1] = gt[1]
+                gt_x = int(gt_label[i, 0]*224)
+                gt_y = int(gt_label[i, 1]*224)
+                head_x = int(head[i, 0]*224)
+                head_y = int(head[i, 1]*224)
+                label[i,2] = (depth[i,:,gt_x,gt_y] - depth[i,:,head_x, head_y])
+            label = torch.tensor(label, dtype=torch.float)
+            gaze = gaze.cpu()
+            loss = criterion(gaze, label)*loss_amp
+            loss.backward()
+            optimizer.step()
+            running_loss.append(loss.item())
+
+            if i % 10 == 9:
+                logger.info('%s'%(str(np.mean(running_loss))))
+                writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
+                running_loss = []
+
+
+         # Validation
+        model.eval()
+        for i, (img, face, head_point, gt_point) in tqdm(enumerate(validation_data_loader), total=len(validation_data_loader)) :
+            image =  img.cuda()
+            face = face.cuda()
+            gt_label = gt_point
+            head = head_point
+            optimizer.zero_grad()
+            gaze,depth = model(image,face)
+            depth =  depth.cpu()
+            max_depth = torch.max(depth)
+            depth = depth / max_depth
+            label = np.zeros((image.shape[0],3))
+            for i in range(image.shape[0]):
+                gt = (gt_label[i] - head[i])
+                label[i,0] = gt[0]
+                label[i,1] = gt[1]
+                gt_x = int(gt_label[i, 0]*224)
+                gt_y = int(gt_label[i, 1]*224)
+                head_x = int(head[i, 0]*224)
+                head_y = int(head[i, 1]*224)
+                label[i,2] = (depth[i,:,gt_x,gt_y] - depth[i,:,head_x, head_y])
+            label = torch.tensor(label, dtype=torch.float)
+            gaze = gaze.cpu()
+            loss = criterion(gaze, label)*loss_amp
+            validation_loss.append(loss.item())
+        val_loss = np.mean(validation_loss)
+
+        logger.info('%s'%(str(val_loss)))
+        writer.add_scalar('validation_loss',val_loss,epoch)
+        validation_loss = []
+
+        early_stopping(val_loss, model, optimizer, epoch, logger)
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+
+    return model
+
 
 def train_face_depth(model,train_data_loader,validation_data_loader, criterion, optimizer, logger, writer ,num_epochs=5,patience=10):
     since = time.time()

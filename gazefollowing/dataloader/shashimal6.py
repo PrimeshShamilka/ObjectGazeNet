@@ -148,3 +148,239 @@ class GooDataset(Dataset):
         else:
             return img, face, location_channel, object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox
 
+
+
+class GazeDataset(Dataset):
+    def __init__(self, root_dir, mat_file, training='train', input_size=224, output_size=64,  include_path=False, imshow = False):
+        assert (training in set(['train', 'test']))
+        self.root_dir = root_dir
+        self.mat_file = mat_file
+        self.training = training
+        self.include_path = include_path
+
+        if self.training == "test":
+            anns = loadmat(self.mat_file)
+            self.bboxes = anns[self.training + '_bbox']
+            self.gazes = anns[self.training + '_gaze']
+            self.paths = anns[self.training + '_path']
+            self.eyes = anns[self.training + '_eyes']
+            self.meta = anns[self.training + '_meta']
+            self.image_num = self.paths.shape[0]
+
+            logging.info('%s contains %d images' % (self.mat_file, self.image_num))
+        else:
+            csv_path = mat_file.split(".mat")[0]+".txt"
+            #print('csv path', csv_path)
+            column_names = ['path', 'idx', 'body_bbox_x', 'body_bbox_y', 'body_bbox_w', 'body_bbox_h', 'eye_x', 'eye_y',
+                            'gaze_x', 'gaze_y',  'meta']
+            df = pd.read_csv(csv_path, sep=',', names=column_names, index_col=False, encoding="utf-8-sig")
+            # df = df[df['inout'] != -1]  # only use "in" or "out "gaze. (-1 is invalid, 0 is out gaze)
+            #print('df', df.head())
+            df.reset_index(inplace=True)
+            self.y_train = df[['eye_x', 'eye_y', 'gaze_x',
+                               'gaze_y']]
+            self.X_train = df['path']
+            self.image_num = len(df)
+
+        self.input_size = input_size
+        self.output_size = output_size
+        self.imshow = imshow
+        logging.info('%s contains %d images' % (self.mat_file, self.image_num))
+        self.transform = _get_transform(input_size)
+        print("Number of Images:", self.image_num)
+
+    def __len__(self):
+        return self.image_num
+
+    def __getitem__(self, idx):
+
+        if self.training == "test":
+            # gaze_inside = True # always consider test samples as inside
+            image_path = self.paths[idx][0][0]
+            image_path = os.path.join(self.root_dir, image_path)
+            eye = self.eyes[0, idx][0]
+            # todo: process gaze differently for training or testing
+            gaze = self.gazes[0, idx].mean(axis=0)
+            gaze = gaze.tolist()
+            eye = eye.tolist()
+            # print('gaze', type(gaze), gaze)
+            gaze_x, gaze_y = gaze
+            image_path = image_path.replace('\\', '/')
+            # image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+            eye_x, eye_y = eye
+            # gaze_x, gaze_y = gaze
+            gaze_inside = True # bool(inout)
+        else:
+            image_path = self.X_train.iloc[idx]
+            eye_x, eye_y, gaze_x, gaze_y = self.y_train.iloc[idx]
+            gaze_inside = True # bool(inout)
+            head_point = np.array([eye_x, eye_y])
+            gt_point = np.array([gaze_x, gaze_y])
+
+        image_path = os.path.join(self.root_dir, image_path)
+        img = Image.open(image_path)
+        img = img.convert('RGB')
+        width, height = img.size
+
+        # expand face bbox a bit
+        k = 0.1
+        x_min = (eye_x - 0.15) * width
+        y_min = (eye_y - 0.15) * height
+        x_max = (eye_x + 0.15) * width
+        y_max = (eye_y + 0.15) * height
+        if x_min < 0:
+            x_min = 0
+        if y_min < 0:
+            y_min = 0
+        if x_max < 0:
+            x_max = 0
+        if y_max < 0:
+            y_max = 0
+        x_min -= k * abs(x_max - x_min)
+        y_min -= k * abs(y_max - y_min)
+        x_max += k * abs(x_max - x_min)
+        y_max += k * abs(y_max - y_min)
+        x_min, y_min, x_max, y_max = map(float, [x_min, y_min, x_max, y_max])
+
+        if self.imshow:
+            img.save("origin_img.jpg")
+
+        if self.training == 'test':
+            imsize = torch.IntTensor([width, height])
+        # else:
+        #     ## data augmentation
+        #
+        #     # Jitter (expansion-only) bounding box size
+        #     if np.random.random_sample() <= 0.5:
+        #         k = np.random.random_sample() * 0.2
+        #         x_min -= k * abs(x_max - x_min)
+        #         y_min -= k * abs(y_max - y_min)
+        #         x_max += k * abs(x_max - x_min)
+        #         y_max += k * abs(y_max - y_min)
+        #
+        #     # Random Crop
+        #     if np.random.random_sample() <= 0.5:
+        #         # Calculate the minimum valid range of the crop that doesn't exclude the face and the gaze target
+        #         crop_x_min = np.min([gaze_x * width, x_min, x_max])
+        #         crop_y_min = np.min([gaze_y * height, y_min, y_max])
+        #         crop_x_max = np.max([gaze_x * width, x_min, x_max])
+        #         crop_y_max = np.max([gaze_y * height, y_min, y_max])
+        #
+        #         # Randomly select a random top left corner
+        #         if crop_x_min >= 0:
+        #             crop_x_min = np.random.uniform(0, crop_x_min)
+        #         if crop_y_min >= 0:
+        #             crop_y_min = np.random.uniform(0, crop_y_min)
+        #
+        #         # Find the range of valid crop width and height starting from the (crop_x_min, crop_y_min)
+        #         crop_width_min = crop_x_max - crop_x_min
+        #         crop_height_min = crop_y_max - crop_y_min
+        #         crop_width_max = width - crop_x_min
+        #         crop_height_max = height - crop_y_min
+        #         # Randomly select a width and a height
+        #         crop_width = np.random.uniform(crop_width_min, crop_width_max)
+        #         crop_height = np.random.uniform(crop_height_min, crop_height_max)
+        #
+        #         # Crop it
+        #         img = TF.crop(img, crop_y_min, crop_x_min, crop_height, crop_width)
+        #
+        #         # Record the crop's (x, y) offset
+        #         offset_x, offset_y = crop_x_min, crop_y_min
+        #
+        #         # convert coordinates into the cropped frame
+        #         x_min, y_min, x_max, y_max = x_min - offset_x, y_min - offset_y, x_max - offset_x, y_max - offset_y
+        #         # if gaze_inside:
+        #         gaze_x, gaze_y = (gaze_x * width - offset_x) / float(crop_width), \
+        #                          (gaze_y * height - offset_y) / float(crop_height)
+        #         width, height = crop_width, crop_height
+        #
+        #     # Random flip
+        #     if np.random.random_sample() <= 0.5:
+        #         img = img.transpose(Image.FLIP_LEFT_RIGHT)
+        #         x_max_2 = width - x_min
+        #         x_min_2 = width - x_max
+        #         x_max = x_max_2
+        #         x_min = x_min_2
+        #         gaze_x = 1 - gaze_x
+        #
+        #     # Random color change
+        #     if np.random.random_sample() <= 0.5:
+        #         img = TF.adjust_brightness(img, brightness_factor=np.random.uniform(0.5, 1.5))
+        #         img = TF.adjust_contrast(img, contrast_factor=np.random.uniform(0.5, 1.5))
+        #         img = TF.adjust_saturation(img, saturation_factor=np.random.uniform(0, 1.5))
+
+        head_channel = chong_imutils.get_head_box_channel(x_min, y_min, x_max, y_max, width, height,
+                                                    resolution=self.input_size, coordconv=False).unsqueeze(0)
+
+        # Crop the face
+        face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
+
+        # shifted grids
+        grid_size = 5
+        gaze_label_size = 5
+        v_x = [0, 1, -1, 0, 0]
+        v_y = [0, 0, 0, -1, 1]
+
+        shifted_grids = np.zeros((grid_size, gaze_label_size, gaze_label_size))
+        for i in range(5):
+
+            x_grid = int(np.floor( gaze_label_size * gaze_x + (v_x[i] * (1/ (grid_size * 3.0))) ) )
+            y_grid = int(np.floor( gaze_label_size * gaze_y + (v_y[i] * (1/ (grid_size * 3.0))) ) )
+
+            if x_grid < 0:
+                x_grid = 0
+            elif x_grid > 4:
+                x_grid = 4
+            if y_grid < 0:
+                y_grid = 0
+            elif y_grid > 4:
+                y_grid = 4
+
+            try:
+                shifted_grids[i][y_grid][x_grid] = 1
+            except:
+                exit()
+
+        shifted_grids = torch.from_numpy(shifted_grids).contiguous()
+
+        shifted_grids = shifted_grids.view(1, 5, 25)
+
+
+        if self.imshow:
+            img.save("img_aug.jpg")
+            face.save('face_aug.jpg')
+
+        if self.transform is not None:
+            img = self.transform(img)
+            face = self.transform(face)
+
+        # generate the heat map used for deconv prediction
+        gaze_heatmap = torch.zeros(self.output_size, self.output_size)  # set the size of the output
+
+        if self.training == 'test':  # aggregated heatmap
+            gaze_heatmap = chong_imutils.draw_labelmap(gaze_heatmap, [gaze_x * self.output_size, gaze_y * self.output_size],
+                                                         3,
+                                                         type='Gaussian')
+
+        else:
+            # if gaze_inside:
+            gaze_heatmap = chong_imutils.draw_labelmap(gaze_heatmap, [gaze_x * self.output_size, gaze_y * self.output_size],
+                                                 3,
+                                                 type='Gaussian')
+        # return
+        if self.imshow:
+            fig = plt.figure(111)
+            img = 255 - chong_imutils.unnorm(img.numpy()) * 255
+            img = np.clip(img, 0, 255)
+            plt.imshow(np.transpose(img, (1, 2, 0)))
+            plt.imshow(imresize(gaze_heatmap, (self.input_size, self.input_size)), cmap='jet', alpha=0.3)
+            plt.imshow(imresize(1 - head_channel.squeeze(0), (self.input_size, self.input_size)), alpha=0.2)
+            plt.savefig('viz_aug.png')
+
+        # intialize object_channel to all ones
+        object_channel = torch.ones(1,224,224)
+
+        if self.training == 'test':
+            return img, face, head_channel, object_channel, gaze_heatmap, image_path, gaze_inside
+        else:
+            return img, face, head_point, gt_point
