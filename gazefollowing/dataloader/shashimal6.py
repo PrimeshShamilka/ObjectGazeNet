@@ -125,12 +125,12 @@ class GooDataset(Dataset):
         face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
         
         
-        heatmap = get_paste_kernel((224 // 4, 224 // 4), gaze, kernel_map, (224 // 4, 224 // 4))
-        seg = data['seg']
-        seg_mask = self.create_mask(np.array(seg).astype(np.int64))
-        seg_mask = cv2.resize(seg_mask, (224//4, 224//4))
-        seg_mask = seg_mask.astype(np.float64)/255.0
-        heatmap = 0.5 * seg_mask + (1 - 0.5) * heatmap
+        # heatmap = get_paste_kernel((224 // 4, 224 // 4), gaze, kernel_map, (224 // 4, 224 // 4))
+        # seg = data['seg']
+        # seg_mask = self.create_mask(np.array(seg).astype(np.int64))
+        # seg_mask = cv2.resize(seg_mask, (224//4, 224//4))
+        # seg_mask = seg_mask.astype(np.float64)/255.0
+        # heatmap = 0.5 * seg_mask + (1 - 0.5) * heatmap
         object_channel = chong_imutils.get_object_box_channel(gt_bboxes[:-1],width,height,resolution=self.input_size).unsqueeze(0)
         head_channel = chong_imutils.get_head_box_channel(x_min, y_min, x_max, y_max, width, height,
                                                     resolution=self.input_size, coordconv=False).unsqueeze(0)
@@ -144,11 +144,11 @@ class GooDataset(Dataset):
             img = self.transform(img)
             face = self.transform2(face)
         if self.training == 'test':
-            return img, face, location_channel,object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox
+            return img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, gtbox
         elif self.training == 'test_prediction':
             return img, face, head, gt_label, centers, gaze_idx, gt_bboxes, gt_labels
         else:
-            return img, face, location_channel, object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox
+            return img, face, location_channel, object_channel,head_channel ,head,gt_label, head_box, gtbox
 
 
 

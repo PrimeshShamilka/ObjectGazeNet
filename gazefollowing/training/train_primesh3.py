@@ -64,7 +64,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
 
         running_loss = []
         validation_loss = []
-        for i, (img, face, location_channel,object_channel,head_channel ,head,gt_label,gaze_heatmap, head_box, gtbox) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)) :
+        for i, (img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, gtbox) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)) :
             image =  img.cuda()
             face = face.cuda()
             gt_label = gt_label
@@ -106,7 +106,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
 
          # Validation
         model.eval()
-        for i, (img, face, location_channel,object_channel,head_channel ,head,gt_label,gaze_heatmap, head_box, gtbox) in tqdm(enumerate(validation_data_loader), total=len(validation_data_loader)) :
+        for i, (img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, gtbox) in tqdm(enumerate(validation_data_loader), total=len(validation_data_loader)) :
             image = img.cuda()
             face = face.cuda()
             gt_label = gt_label
