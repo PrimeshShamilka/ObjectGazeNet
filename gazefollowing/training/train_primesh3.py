@@ -5,6 +5,9 @@ import numpy as np
 from early_stopping_pytorch.pytorchtools import EarlyStopping
 from tqdm import tqdm
 import torch.nn as nn
+import warnings
+
+# warnings.filterwarnings('error')
 
 class GazeOptimizer():
     def __init__(self, net, initial_lr, weight_decay=1e-6):
@@ -538,3 +541,123 @@ def test_face3d_bias(model, test_data_loader, logger, test_depth=True, save_outp
                 angle_error.append(ae)
         angle_error = np.mean(np.array(angle_error),axis=0)
     print(angle_error)
+
+def t(p, q, r):
+    x = p-q
+    return np.dot(r-q, x)/np.dot(x, x)
+
+def d(p, q, r):
+    return np.linalg.norm(t(p, q, r)*(p-q)+q-r)
+
+def calc_ang_err(output, target, eyes):
+    pred_point = output
+    eye_point = eyes
+    gt_point = target
+    pred_dir = pred_point - eye_point
+    gt_dir = gt_point - eye_point
+    norm_pred = (pred_dir[0] ** 2 + pred_dir[1] ** 2) ** 0.5
+    norm_gt = (gt_dir[0] ** 2 + gt_dir[1] ** 2) ** 0.5
+    cos_sim = (pred_dir[0] * gt_dir[0] + pred_dir[1] * gt_dir[1]) / \
+              (norm_gt * norm_pred + 1e-6)
+    cos_sim = np.maximum(np.minimum(cos_sim, 1.0), -1.0)
+    ang_error = np.arccos(cos_sim) * 180 / np.pi
+    return ang_error
+
+def bb_iou(boxA, boxB):
+    xA = max(boxA[0], boxB[0]) # left
+    yA = max(boxA[1], boxB[1]) # top
+    xB = min(boxA[2], boxB[2]) # right
+    yB = min(boxA[3], boxB[3]) # down
+    if xB < xA or yB < yA:
+        return 0.0
+    interArea = (xB - xA) * (yB - yA)
+    boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+    boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
+    iou = round(interArea / float(boxAArea + boxBArea - interArea), 2)
+    assert iou >= 0.0
+    assert iou <= 1.0
+    return iou
+
+def test_face3d_prediction(model, test_data_loader, logger, save_output=False):
+    model.eval()
+    angle_error = []
+    l2=[]
+    all_iou = []
+    class_iou = []
+    with torch.no_grad():
+        for img, face, head, gt_label, centers, gaze_idx, gt_bboxes, gt_labels in test_data_loader:
+            image = img.cuda()
+            face = face.cuda()
+            gt_bboxes = np.array(list(gt_bboxes))
+            gt_labels = np.array(list(gt_labels))
+            box_avg_width = np.mean(gt_bboxes[:, 0, 2] - gt_bboxes[:, 0, 0])
+            box_avg_height = np.mean(gt_bboxes[:, 0, 3] - gt_bboxes[:, 0, 1])
+            gaze, depth = model(image, face)
+            # make normalized 3D points
+            depth = depth.squeeze().detach().cpu().numpy()
+            depth = depth / np.max(depth)
+            for i in range (image.shape[0]):
+                points = []
+                for cen in centers[i]:
+                    point = [cen[0]/224, cen[1]/224, depth[cen[1], cen[0]]]
+                    points.append(point)
+                points = np.array(points)
+                head_point = points[-1,:]
+                gt_point = points[gaze_idx, :]
+                xyz = gaze.detach().cpu().numpy()[i]
+                xyz = xyz + head_point
+                pred_box = np.array([(xyz[0]-box_avg_width), (xyz[1]-box_avg_height), (xyz[0]+box_avg_width), (xyz[1]+box_avg_height)])
+                pred_box = pred_box * [640, 480, 640, 480]
+                pred_box = pred_box.astype(int)
+                # bbox IOU
+                max_id = -1
+                max_iou = 0
+                for k, b in enumerate(gt_bboxes):
+                    b = b[0] * [640, 480, 640, 480]
+                    b = b.astype(int)
+                    iou = bb_iou(b, pred_box)
+                    if iou > max_iou:
+                        max_iou = iou
+                        max_id = k
+                # nearest box by box_iou
+                if max_id == -1:
+                    all_iou.append(0)
+                elif (gaze_idx[i] == max_id):
+                    all_iou.append(1)
+                else:
+                    all_iou.append(0)
+                # by class
+                if max_id == -1:
+                    class_iou.append(0)
+                elif (gt_labels[gaze_idx[i]] == gt_labels[max_id]):
+                    class_iou.append(1)
+                else:
+                    class_iou.append(0)
+        class_auc = (sum(class_iou) / len(class_iou)) * 100
+        iou_auc = (sum(all_iou) / len(all_iou)) * 100
+        print (iou_auc, class_auc)
+
+                # Angular error
+                # xyz_copy = np.repeat(np.expand_dims(xyz, axis=0), points.shape[0], axis=0)
+                # dist = np.sum(np.sqrt((points - xyz_copy)**2), axis=1)
+                # distance = np.apply_along_axis(lambda x: d(x, head_point, xyz), 1, points[:-1, :])
+                # pred_idx = np.argmin(dist)
+                # gt_idx = gaze_idx
+                # pred_point = points[pred_idx]
+                # # ang_error = calc_ang_err(xyz[:2], gt_point[:2], head_point[:2])
+                # # angle_error.append(ang_error)
+                # label = (gt_point - head_point)[i]
+                # # pred = pred_point - head_point
+                # pred = xyz
+                # ae = np.dot(pred[:2],label[:2])/(np.sqrt(np.dot(label[:2],label[:2])*np.dot(pred[:2], pred[:2])) + np.finfo(np.float32).eps)
+                # ae = np.arccos(np.maximum(np.minimum(ae,1.0),-1.0)) * 180 / np.pi
+                # angle_error.append(ae)
+
+                # L2 dist
+                # euclid_dist = np.sqrt(np.power((gt_point[i, 0] - xyz[0]), 2) + np.power((gt_point[i, 1] - xyz[1]), 2))
+                # l2.append(euclid_dist)
+        # angle_error = np.mean(np.array(angle_error), axis=0)
+        # l2_dist = np.mean(np.array(l2), axis=0)
+    # print(l2_dist)
+
+

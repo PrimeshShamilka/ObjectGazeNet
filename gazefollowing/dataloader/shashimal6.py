@@ -58,7 +58,7 @@ def boxes2centers(normalized_boxes):
 
 class GooDataset(Dataset):
     def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64, imshow = False, use_gtbox=True):
-        assert (training in set(['train', 'test']))
+        assert (training in set(['train', 'test', 'test_prediction']))
         self.root_dir = root_dir
         self.mat_file = mat_file
         self.training = training
@@ -145,6 +145,8 @@ class GooDataset(Dataset):
             face = self.transform2(face)
         if self.training == 'test':
             return img, face, location_channel,object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox
+        elif self.training == 'test_prediction':
+            return img, face, head, gt_label, centers, gaze_idx, gt_bboxes, gt_labels
         else:
             return img, face, location_channel, object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox
 

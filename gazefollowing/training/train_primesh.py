@@ -561,8 +561,7 @@ def test(model, test_data_loader, logger, save_output=False):
 
             outputs, raw_hm = model.raw_hm(image, face, head_channel, object_channel)
 
-            pred_labels = outputs.max(1)[
-                1]  # max function returns both values and indices. so max()[0] is values, max()[1] is indices
+            pred_labels = outputs.max(1)[1]  # max function returns both values and indices. so max()[0] is values, max()[1] is indices
             inputs_size = image.size(0)
 
             for i in range(inputs_size):

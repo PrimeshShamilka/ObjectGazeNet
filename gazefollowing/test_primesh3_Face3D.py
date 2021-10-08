@@ -26,7 +26,7 @@ from models.primesh3 import Shashimal6_Face3D, Shashimal6_FaceDepth, Shashimal6_
 from dataloader.shashimal6 import GooDataset
 from dataloader import chong_imutils
 # from training.train_primesh import train, GazeOptimizer, train_with_early_stopping, test_gop, test
-from training.train_primesh3 import train_face3d, GazeOptimizer, test_face3d, train_face_depth, test_face_depth, train_face3d_bias
+from training.train_primesh3 import train_face3d, GazeOptimizer, test_face3d, train_face_depth, test_face_depth, train_face3d_bias, test_face3d_prediction
 from torch.nn.utils.rnn import pad_sequence
 
 logger = setup_logger(name='first_logger',
@@ -48,19 +48,17 @@ val_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/D
 
 def pad_x_collate_function(batch):
     # batch looks like [(x0,y0), (x4,y4), (x2,y2)... ]
-    img, face, head_channel, object_channel,gaze_final,eye,gaze_idx,gt_bboxes,gt_labels = zip(*batch)
+    img, face, head, gt_label, centers, gaze_idx, gt_bboxes, gt_labels = zip(*batch)
 
     # If you want to be a little fancy, you can do the above in one line
     # xs, ys = zip(*samples)
     img = pad_sequence(img, batch_first=True, padding_value=0)
     face = pad_sequence(face, batch_first=True, padding_value=0)
-    head_channel = pad_sequence(head_channel, batch_first=True, padding_value=0)
-    object_channel = pad_sequence(object_channel, batch_first=True, padding_value=0)
     #eye = pad_sequence(eye, batch_first=True, padding_value=0)
     #gaze = pad_sequence(gaze, batch_first=True, padding_value=0)
     #gtbox = pad_sequence(gtbox, batch_first=True, padding_value=0)
     #gt_bboxes = pad_sequence(gt_bboxes, batch_first=True, padding_value=0)
-    return img, face, head_channel, object_channel,gaze_final,eye,gaze_idx,zip(*gt_bboxes),zip(*gt_labels)
+    return img, face, head, gt_label, centers, gaze_idx, zip(*gt_bboxes), zip(*gt_labels)
 
 
 print ('Train')
@@ -81,6 +79,11 @@ test_data_loader = DataLoader(test_set, batch_size=batch_size//2,
                             shuffle=False, num_workers=8)
 
 
+print ('Test')
+test_pred_set = GooDataset(test_images_dir, test_pickle_path, 'test_prediction')
+test_pred_data_loader = DataLoader(test_pred_set, batch_size=1,
+                            shuffle=False, num_workers=8, collate_fn=pad_x_collate_function)
+
 # Load model for inference
 # print ("Model loading")
 # model = DualAttention()
@@ -100,12 +103,23 @@ test_data_loader = DataLoader(test_set, batch_size=batch_size//2,
 # Load model for training
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # model_ft2 = Shashimal6_Face3D()
-model_ft2 = Shashimal6_Face3D_Bias()
-model_ft2 = model_ft2.to(device)
+# model_ft2 = Shashimal6_Face3D_Bias()
+# model_ft2 = model_ft2.to(device)
 # criterion = nn.NLLLoss().cuda()
 # criterion = nn.BCELoss().cuda()
-criterion = nn.MSELoss()
+# criterion = nn.MSELoss()
 # criterion
+
+# Load model for test prediction
+model = Shashimal6_Face3D().cuda()
+checkpoint_fpath = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/saved_weights/shashimal6_Face3d_75_70_30_split.pt'
+checkpoint = torch.load(checkpoint_fpath)
+model.load_state_dict(checkpoint['state_dict'])
+
+# model2 = Shashimal6_Face3D().cuda()
+# checkpoint_fpath = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/saved_weights/shashimal6_face_43.pt'
+# checkpoint = torch.load(checkpoint_fpath)
+# model2.load_state_dict(checkpoint['state_dict'])
 
 # Observe that all parameters are being optimized
 start_epoch = 0
@@ -113,8 +127,8 @@ max_epoch = 5
 learning_rate = 1e-4
 
 # Initializes Optimizer
-gaze_opt = GazeOptimizer(model_ft2, learning_rate)
-optimizer = gaze_opt.getOptimizer(start_epoch)
+# gaze_opt = GazeOptimizer(model_ft2, learning_rate)
+# optimizer = gaze_opt.getOptimizer(start_epoch)
 
 if False:
     checkpoint_fpath = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/saved_weights/primesh_gazefollow_26_gooreal_3.pt'
@@ -129,4 +143,5 @@ writer = SummaryWriter('runs/face_3d')
 # test_face3d(model_ft2, test_data_loader, logger, test_depth=False)
 # train_face_depth(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
 # test_face_depth(model_ft2, test_data_loader, logger)
-train_face3d_bias(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
+# train_face3d_bias(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
+test_face3d_prediction(model, test_pred_data_loader, logger)
