@@ -155,7 +155,7 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
     model.eval()
     angle_error = []
     with torch.no_grad():
-        for img, face, location_channel,object_channel,head_channel ,head,gt_label,heatmap, head_box, gtbox in test_data_loader:
+        for img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, gtbox in test_data_loader:
             image =  img.cuda()
             face = face.cuda()
             gaze,depth = model(image,face)
@@ -182,9 +182,9 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
                 # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             for i in range(img.shape[0]):
                 if test_depth == True:
-                    ae = np.dot(gaze[i,:],label[i,:])/np.sqrt(np.dot(label[i,:],label[i,:])*np.dot(gaze[i,:],gaze[i,:]))
+                    ae = np.dot(gaze[i,:],label[i,:])/(np.sqrt(np.dot(label[i,:],label[i,:])*np.dot(gaze[i,:],gaze[i,:]))+np.finfo(np.float32).eps)
                 else:
-                    ae = np.dot(gaze[i,:2],label[i,:2])/np.sqrt(np.dot(label[i,:2],label[i,:2])*np.dot(gaze[i,:2], gaze[i,:2]))
+                    ae = np.dot(gaze[i,:2],label[i,:2])/(np.sqrt(np.dot(label[i,:2],label[i,:2])*np.dot(gaze[i,:2], gaze[i,:2]))+np.finfo(np.float32).eps)
                 ae = np.arccos(np.maximum(np.minimum(ae,1.0),-1.0)) * 180 / np.pi
                 angle_error.append(ae)
         angle_error = np.mean(np.array(angle_error),axis=0)
