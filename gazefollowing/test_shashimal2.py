@@ -41,6 +41,8 @@ images_dir = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datas
 pickle_path = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/oneshotrealhumansNew.pickle'
 test_images_dir = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
 test_pickle_path = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle'
+val_images_dir = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
+val_pickle_path = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/valrealhumansNew.pickle'
 
 def pad_x_collate_function(batch):
     # batch looks like [(x0,y0), (x4,y4), (x2,y2)... ]
@@ -64,9 +66,15 @@ train_data_loader = DataLoader(dataset=train_set,
                                            shuffle=True,
                                            num_workers=4)
 
-test_set = GooDataset(test_images_dir, test_pickle_path, 'test')
+val_set = GooDataset(val_images_dir, val_pickle_path, 'train')
+val_data_loader = DataLoader(dataset=val_set,
+                                           batch_size=4,
+                                           shuffle=True,
+                                           num_workers=16)
+
+test_set = GooDataset(test_images_dir, test_pickle_path, 'test', use_gtbox=False)
 test_data_loader = DataLoader(test_set, batch_size=1,
-                            shuffle=False, num_workers=4, collate_fn=pad_x_collate_function)
+                            shuffle=False, num_workers=4)
 
 
 
@@ -94,7 +102,7 @@ learning_rate = 1e-4
 # Initializes Optimizer
 gaze_opt = GazeOptimizer(model_ft, learning_rate)
 optimizer = gaze_opt.getOptimizer(start_epoch)
-if True:
+if False:
     checkpoint_fpath = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/code/ObjectGazeNet/saved_weights/shashimal2_gazefollow_6_gooreal_16_chechkpoint_full.pt'
     checkpoint = torch.load(checkpoint_fpath)
     model_ft.load_state_dict(checkpoint['state_dict'])
@@ -106,9 +114,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 # default `log_dir` is "runs" - we'll be more specific here
 writer = SummaryWriter('runs/shashimal2_pretrained')
-
-# model_ft = train_with_early_stopping(model_ft,train_data_loader, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
+model_ft = train_with_early_stopping(model_ft, train_data_loader, val_images_dir, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
 # test_gop(model_ft, test_data_loader, logger, save_output=False)
-test(model_ft, test_data_loader, logger, save_output=False)
+# test(model_ft, test_data_loader, logger, save_output=False)
 
 

@@ -14,7 +14,7 @@ from tqdm import tqdm
 import cv2
 import matplotlib.pyplot as plt
 from early_stopping_pytorch.pytorchtools import EarlyStopping
-
+import csv
 
 def euclid_dist(output, target):
     output = output
@@ -179,6 +179,11 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
             if i % 50 == 49:
                 logger.info('%s' % (str(np.mean(running_loss))))
                 writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
+            
+                with open ('training_loss.cvs', 'a') as f:
+                    writer_csv = csv.writer(f)
+                    writer_csv.writerow([epoch*n_total_steps + i, str(np.mean(running_loss))])
+
                 running_loss = []
 
         # validate the model
@@ -215,6 +220,9 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
         valid_losses = []
 
         writer.add_scalar('validation_loss', valid_loss, epoch * n_total_steps)
+        with open ('validation_loss.cvs', 'a') as f:
+            writer_csv2 = csv.writer(f)
+            writer_csv2.writerow([epoch*n_total_steps, str(valid_loss)])
 
         # early stopping detector
         early_stopping(valid_loss, model, optimizer, epoch, logger)
@@ -358,8 +366,11 @@ def test(model, test_data_loader, logger, save_output=False):
     all_predmap = []
 
     with torch.no_grad():
-        for i, (img, face, head_channel, object_channel, gaze_final, eye, gaze_idx, gt_bboxes,
-                gt_labels) in tqdm(enumerate(test_data_loader), total=len(test_data_loader)):
+
+        # for i, (img, face, head_channel, object_channel, gaze_final, eye, gaze_idx, gt_bboxes,
+        #         gt_labels) in tqdm(enumerate(test_data_loader), total=len(test_data_loader)):
+        for i, (img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, 
+            shifted_grids, gaze_final, eyess) in tqdm(enumerate(test_data_loader), total=len(test_data_loader)):
             image = img.cuda()
             head_channel =  head_channel.cuda()
             face = face.cuda()
