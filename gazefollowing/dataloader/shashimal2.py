@@ -198,7 +198,7 @@ class GooDataset(Dataset):
                 img = TF.adjust_contrast(img, contrast_factor=np.random.uniform(0.5, 1.5))
                 img = TF.adjust_saturation(img, saturation_factor=np.random.uniform(0, 1.5))
         # print('bbx2',  [x_min, y_min, x_max, y_max])
-        object_channel = chong_imutils.get_object_box_channel(gt_bboxes,width,height,resolution=self.input_size).unsqueeze(0)
+        object_channel = chong_imutils.get_object_box_channel(gt_bboxes[:-1],width,height,resolution=self.input_size).unsqueeze(0)
         head_channel = chong_imutils.get_head_box_channel(x_min, y_min, x_max, y_max, width, height,
                                                     resolution=self.input_size, coordconv=False).unsqueeze(0)
 
@@ -268,8 +268,8 @@ class GooDataset(Dataset):
                                                  type='Gaussian')
 
         if self.training == 'test' and self.use_gtbox:
-            # return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox, eyess
-            return img, face, head_channel, object_channel,gaze_final,eye,gaze_idx,gt_bboxes,gt_labels
+            return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, gaze_final, gtbox, eyess, gt_bboxes
+            # return img, face, head_channel, object_channel,gaze_final,eye,gaze_idx,gt_bboxes,gt_labels
         elif self.training == 'test':
             return img, face, head_channel, object_channel,eyes_loc, gaze_heatmap, gaze, gaze_inside, image_path, shifted_grids, gaze_final, eyess
         else:

@@ -32,6 +32,7 @@ from torch.utils.data import Dataset, DataLoader
 from models.shashimal2 import Shashimal2
 # from scipy.misc import imresize
 import time
+import matplotlib.pyplot as plt
 
 def parse_inputs():
 
@@ -86,21 +87,32 @@ def select_nearest_bbox(gazepoint, gt_bboxes, gt_labels=None):
     }
     return nearest_box
 
-def draw_results(image_path, eyepoint, gazepoint, idx, gtbox, bboxes=None):
+def draw_results(image_path, eyepoint, gazepoint, idx, gtbox, gaze, bboxes=None):
     # Convert to numpy arrays jic users passed lists
     eyepoint, gazepoint, gazebox = map(np.array, [eyepoint, gazepoint, bboxes])
 
     # Draw gazepoints and gt
     im = cv2.imread(image_path)
-    image_height, image_width = im.shape[:2]
+    im = cv2.resize(im, (640, 640))
+    # im_original = im
+    save_dir = './temp/new2/'
+    # save_path_original = save_dir + str(idx) + '.png'
+    # cv2.imwrite(save_path_original, im_original)
+    # image_height, image_width = im.shape[:2]
+    image_height, image_width = 640, 640
+
     x1, y1 = eyepoint
     x2, y2 = gazepoint
+    xg, yg = gaze
     x1, y1 = image_width * x1, y1 * image_height
     x2, y2 = image_width * x2, y2 * image_height
-    x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
-    cv2.circle(im, (x1, y1), 5, [255, 255, 255], -1)
-    cv2.circle(im, (x2, y2), 5, [255, 255, 255], -1)
+    xg, yg = image_width * xg, yg * image_height
+    x1, y1, x2, y2, xg, yg = map(int, [x1, y1, x2, y2, xg, yg])
+    cv2.circle(im, (x1, y1), 1, [255, 255, 255], -1)
+    cv2.circle(im, (x2, y2), 1, [255, 255, 255], -1)
+    cv2.circle(im, (xg, yg), 1, [255, 255, 255], -1)
     cv2.line(im, (x1, y1), (x2, y2), [255, 0, 0], 2)
+    cv2.line(im, (x1, y1), (xg, yg), [0, 0, 255], 2)
 
     if bboxes is not None:
         assert (len(bboxes.shape) == 2), 'gazebox must be numpy array of shape (N,4)'
@@ -122,13 +134,12 @@ def draw_results(image_path, eyepoint, gazepoint, idx, gtbox, bboxes=None):
         cv2.rectangle(im, (gtbox[0], gtbox[1]), (gtbox[2], gtbox[3]), (0, 0, 0), 2)
 
     img = im
-    save_dir = './temp/new/'
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
     filename = 'inference_%s.png' % str(idx)
     save_path = save_dir + filename
-    cv2.imwrite(save_path, img)
+    cv2.imwrite(save_path, im)
 
     return None
 
@@ -168,12 +179,12 @@ def main():
     net = Shashimal2()
     net.cuda()
 
-    resume_path = "/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/code/ObjectGazeNet/saved_weights/shashimal2_gazefollow_6_gooreal_16_chechkpoint_full.pt"
+    resume_path = "/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/code/ObjectGazeNet/saved_weights/shashimal2_gazefollow_6_gooreal_16_chechkpoint_full.pt"
     net, optimizer, start_epoch = resume_checkpoint(net, None, resume_path)
 
     # Prepare dataloaders
-    test_images_dir = "/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2"
-    test_pickle_path = "/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle"
+    test_images_dir = "/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2"
+    test_pickle_path = "/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle"
 
     # For GOO
     val_set = GooDataset(test_images_dir, test_pickle_path, 'test', use_gtbox=True)
@@ -185,7 +196,7 @@ def main():
     start_time = time.time()
     counter = 0
     # Get a random sample image from the dataset
-    for i in range(len(val_set)):
+    for i in range(20):
         idx = np.random.randint(len(val_set))
         print (idx)
         val_item = val_set.__getitem__(idx)
@@ -200,7 +211,8 @@ def main():
         # face = val_item[1].unsqueeze(0).cuda().to(torch.device('cpu'))
         # bboxes = val_item[9]
         # eyes = val_item[3]
-
+        # image = val_item[0].numpy().transpose(1,2,0)
+        # cv2.imwrite('./temp/new2/'+str(idx)+'.png', image)
         img = val_item[0].unsqueeze(0).cuda()
         face = val_item[1].unsqueeze(0).cuda()
         head_channel = val_item[2].unsqueeze(0).cuda()
@@ -208,10 +220,44 @@ def main():
         eyes_loc = val_item[-2]
         gtbox = val_item[-3]
         gt_bboxes = val_item[-1]
+        gaze = val_item[6]
         # gtbox = np.expand_dims(gtbox, axis=0)
 
         heatmap, x, y = test_on_image(net, img, face, head_channel, object_channel)
-        draw_results(image_path, eyes_loc, (x,y), idx, gtbox, gt_bboxes[:-1])
+        # draw_results(image_path, eyes_loc, (x,y), idx, gtbox, gt_bboxes[:-1])
+        draw_results(image_path, eyes_loc, (x,y), idx, gtbox, gaze, None)
+
+
+        # original image
+        img_new = cv2.imread(image_path)
+        img_new = cv2.resize(img_new, (640, 640))
+        img_new = cv2.cvtColor(img_new, cv2.COLOR_BGR2RGB)
+
+        # save img
+        obj_channel = object_channel.squeeze()
+        objs = obj_channel.cpu().numpy()
+        im = img.squeeze().cpu().numpy().transpose(1,2,0)
+        fname = './temp/new2/' + str(idx) + '.png'
+        plt.imshow(img_new)
+        plt.savefig(fname)
+        plt.clf()
+
+        # save object channel
+        plt.imshow(img_new)
+        objs = cv2.resize(objs, (640, 640))
+        plt.imshow(objs, alpha=0.5)
+        obj_fname = './temp/new2/' + str(idx) + '_obj_channel.png'
+        plt.savefig(obj_fname)
+        plt.clf()
+
+        # save heatmap
+        plt.imshow(img_new)
+        heatmap_out = cv2.resize(heatmap, (640,640))
+        plt.imshow(heatmap_out, alpha=0.5)
+        # plt.imshow(heatmap_out)
+        heatmap_fname = './temp/new2/' + str(idx) + '_hm.png'
+        plt.savefig(heatmap_fname)
+        pass
         # break
         # counter+=1
         # print ("DONE")

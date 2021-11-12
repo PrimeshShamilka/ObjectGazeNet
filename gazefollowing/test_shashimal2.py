@@ -37,10 +37,10 @@ logger = setup_logger(name='first_logger',
 batch_size=4
 workers=4
 
-images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
-pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/oneshotrealhumansNew.pickle'
-test_images_dir = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
-test_pickle_path = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle'
+images_dir = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
+pickle_path = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/oneshotrealhumansNew.pickle'
+test_images_dir = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/finalrealdatasetImgsV2'
+test_pickle_path = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/Datasets/gooreal/testrealhumansNew.pickle'
 
 def pad_x_collate_function(batch):
     # batch looks like [(x0,y0), (x4,y4), (x2,y2)... ]
@@ -95,7 +95,7 @@ learning_rate = 1e-4
 gaze_opt = GazeOptimizer(model_ft, learning_rate)
 optimizer = gaze_opt.getOptimizer(start_epoch)
 if True:
-    checkpoint_fpath = '/media/primesh/F4D0EA80D0EA4906/PROJECTS/FYP/Gaze detection/code/ObjectGazeNet/saved_weights/shashimal2_gazefollow_6_gooreal_16_chechkpoint_full.pt'
+    checkpoint_fpath = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/code/ObjectGazeNet/saved_weights/shashimal2_gazefollow_6_gooreal_16_chechkpoint_full.pt'
     checkpoint = torch.load(checkpoint_fpath)
     model_ft.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
@@ -108,7 +108,7 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('runs/shashimal2_pretrained')
 
 # model_ft = train_with_early_stopping(model_ft,train_data_loader, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
-test_gop(model_ft, test_data_loader, logger, save_output=False)
-
+# test_gop(model_ft, test_data_loader, logger, save_output=False)
+test(model_ft, test_data_loader, logger, save_output=False)
 
 

@@ -108,7 +108,7 @@ class Shashimal2(nn.Module):
         return [out_0_0, out_1_0, out_m1_0, out_0_m1, out_0_1]
 
 
-    def raw_hm(self,image,face,head_channel,object_channel):
+    def raw_hm(self,image, face, head_channel, object_channel):
         face_feat =  self.face_net(face)
         head_reduced = self.maxpool(self.maxpool(self.maxpool(head_channel))).view(-1, 784)
         face_feat_reduced = self.avgpool(face_feat).view(-1, 2048)
