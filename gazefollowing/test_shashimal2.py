@@ -114,8 +114,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 # default `log_dir` is "runs" - we'll be more specific here
 writer = SummaryWriter('runs/shashimal2_pretrained')
-model_ft = train_with_early_stopping(model_ft, train_data_loader, val_images_dir, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
+# model_ft = train_with_early_stopping(model_ft, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
 # test_gop(model_ft, test_data_loader, logger, save_output=False)
-# test(model_ft, test_data_loader, logger, save_output=False)
+test(model_ft, test_data_loader, logger, save_output=False)
 
 

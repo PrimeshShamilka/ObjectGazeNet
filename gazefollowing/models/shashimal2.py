@@ -6,7 +6,7 @@ import math
 from lib.pytorch_convolutional_rnn import convolutional_rnn
 import numpy as np
 from resnest.torch import resnest50
-
+# from resnest.torch import resnest101
 
 class Shashimal2(nn.Module):
     def __init__(self):
@@ -58,6 +58,7 @@ class Shashimal2(nn.Module):
                 m.bias.data.zero_()
         print(count)
         model = resnest50(pretrained=True)
+        # model = resnest101(pretrained=True)
         self.face_net = nn.Sequential(*(list(model.children())[:-2]))
         self.attn = nn.Linear(2832, 1*7*7)
         self.scence_net = nn.Sequential(*(list(model.children())[:-2]))
