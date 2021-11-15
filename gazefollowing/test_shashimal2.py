@@ -17,7 +17,8 @@ import cv2
 from utils_logging import setup_logger
 
 
-from models.shashimal2 import Shashimal2
+# from models.shashimal2 import Shashimal2
+from models.shashimal2_resnet_18 import Shashimal2
 from models.__init__ import save_checkpoint, resume_checkpoint
 #from dataloader.shashimal2_synth import GooDataset
 from dataloader.shashimal2 import GooDataset

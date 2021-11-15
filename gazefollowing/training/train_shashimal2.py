@@ -51,7 +51,7 @@ def calc_ang_err(output, target, eyes):
     predx = ((output % 227.0) / 227.0)
     pred_point = np.array([predx, predy])
 
-    eye_point = eyes
+    eye_point = eyes.numpy()
 
     x_list = []
     y_list = []
@@ -72,6 +72,11 @@ def calc_ang_err(output, target, eyes):
 
     pred_dir = pred_point - eye_point
     gt_dir = gt_point - eye_point
+
+
+
+
+
 
     norm_pred = (pred_dir[0] ** 2 + pred_dir[1] ** 2) ** 0.5
     norm_gt = (gt_dir[0] ** 2 + gt_dir[1] ** 2) ** 0.5
@@ -375,6 +380,7 @@ def test(model, test_data_loader, logger, save_output=False):
             head_channel =  head_channel.cuda()
             face = face.cuda()
             object_channel = object_channel.cuda()
+            # eyess =  torch.from_numpy(eyess)
 
             outputs, raw_hm = model.raw_hm(image,face,head_channel,object_channel)
             
@@ -383,7 +389,7 @@ def test(model, test_data_loader, logger, save_output=False):
 
             for i in range(inputs_size):           
                 distval, f_point = euclid_dist(pred_labels.data.cpu()[i], gaze_final[i])
-                ang_error = calc_ang_err(pred_labels.data.cpu()[i], gaze_final[i], eye.cpu()[i])
+                ang_error = calc_ang_err(pred_labels.data.cpu()[i], gaze_final[i], eyess.data.cpu()[i])
                 #auc_score = cal_auc(ground_labels[i], raw_hm[i, :, :])
                 predmap, gtmap = cal_auc(gaze_final[i], raw_hm[i, :, :])
 

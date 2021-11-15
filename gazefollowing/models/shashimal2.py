@@ -6,7 +6,7 @@ import math
 from lib.pytorch_convolutional_rnn import convolutional_rnn
 import numpy as np
 from resnest.torch import resnest50
-# from resnest.torch import resnest101
+from resnest.torch import resnest101
 
 class Shashimal2(nn.Module):
     def __init__(self):
@@ -57,8 +57,8 @@ class Shashimal2(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
         print(count)
-        model = resnest50(pretrained=True)
-        # model = resnest101(pretrained=True)
+        # model = resnest50(pretrained=True)
+        model = resnest101(pretrained=True)
         self.face_net = nn.Sequential(*(list(model.children())[:-2]))
         self.attn = nn.Linear(2832, 1*7*7)
         self.scence_net = nn.Sequential(*(list(model.children())[:-2]))
@@ -74,7 +74,7 @@ class Shashimal2(nn.Module):
         attn_weights = attn_weights.view(-1, 1, 7, 7)
 
         im = torch.cat((image, head_channel,object_channel), dim=1)
-   
+
         im = self.conv1_scene(im)
         im = self.bn1_scene(im)
         im = self.relu(im)
