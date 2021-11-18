@@ -18,7 +18,7 @@ from utils_logging import setup_logger
 
 
 # from models.shashimal2 import Shashimal2
-from models.shashimal2_resnet_50 import Shashimal2
+from models.shashimal2 import Shashimal2_resnet
 from models.__init__ import save_checkpoint, resume_checkpoint
 #from dataloader.shashimal2_synth import GooDataset
 from dataloader.shashimal2 import GooDataset
@@ -85,7 +85,7 @@ torch.cuda.empty_cache()
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model_ft = Shashimal2()
+model_ft = Shashimal2_resnet()
 
 
 model_ft = model_ft.to(device)
@@ -113,8 +113,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 # default `log_dir` is "runs" - we'll be more specific here
 writer = SummaryWriter('runs/shashimal2_pretrained')
-# model_ft = train_with_early_stopping(model_ft, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
+model_ft = train_with_early_stopping(model_ft, train_data_loader, val_data_loader, criterion, optimizer, logger, writer,num_epochs=4, patience=10)
 # test_gop(model_ft, test_data_loader, logger, save_output=False)
-test(model_ft, test_data_loader, logger, save_output=False)
+# test(model_ft, test_data_loader, logger, save_output=False)
 
 
