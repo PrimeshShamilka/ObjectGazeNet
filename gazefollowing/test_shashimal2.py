@@ -18,7 +18,7 @@ from utils_logging import setup_logger
 
 
 # from models.shashimal2 import Shashimal2
-from models.shashimal2_resnet_18 import Shashimal2
+from models.shashimal2_resnet_50 import Shashimal2
 from models.__init__ import save_checkpoint, resume_checkpoint
 #from dataloader.shashimal2_synth import GooDataset
 from dataloader.shashimal2 import GooDataset
@@ -32,8 +32,6 @@ logger = setup_logger(name='first_logger',
                       log_file='train_chong_gooreal.log',
                       log_format = '%(asctime)s %(levelname)s %(message)s',
                       verbose=True)
-
-
 
 batch_size=4
 workers=4
