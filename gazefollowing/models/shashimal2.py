@@ -261,7 +261,7 @@ class Shashimal2_resnet(nn.Module):
         print(count)
         # model = resnest50(pretrained=True)
         # model = resnest101(pretrained=True)
-        model = models.resnet50(pretrained=True)
+        model = models.resnet101(pretrained=True)
         self.face_net = nn.Sequential(*(list(model.children())[:-2]))
         # self.face_net = model
         self.attn = nn.Linear(2832, 1 * 7 * 7)

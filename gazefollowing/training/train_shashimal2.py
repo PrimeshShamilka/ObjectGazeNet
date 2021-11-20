@@ -151,6 +151,7 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
         model.train()  # Set model to training mode
 
         running_loss = []
+        running_loss2 = []
         valid_losses = []
         avg_valid_losses = []
 
@@ -181,6 +182,8 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
             inputs_size = image.size(0)
 
             running_loss.append(total_loss.item())
+            running_loss2.append(total_loss.item())
+
             if i % 50 == 49:
                 logger.info('%s' % (str(np.mean(running_loss))))
                 writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
@@ -190,6 +193,11 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
                     writer_csv.writerow([epoch*n_total_steps + i, str(np.mean(running_loss))])
 
                 running_loss = []
+
+            with open('training_loss.cvs', 'a') as f:
+                writer_csv = csv.writer(f)
+                writer_csv.writerow([epoch * n_total_steps, str(np.mean(running_loss))])
+            running_loss2 = []
 
         # validate the model
         model.eval()
