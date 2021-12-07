@@ -188,15 +188,15 @@ def train_with_early_stopping(model, train_data_loader, val_data_loader, criteri
                 logger.info('%s' % (str(np.mean(running_loss))))
                 writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
             
-                with open ('training_loss.cvs', 'a') as f:
-                    writer_csv = csv.writer(f)
-                    writer_csv.writerow([epoch*n_total_steps + i, str(np.mean(running_loss))])
+                # with open ('training_loss.cvs', 'a') as f:
+                #     writer_csv = csv.writer(f)
+                #     writer_csv.writerow([epoch*n_total_steps + i, str(np.mean(running_loss))])
 
                 running_loss = []
 
             with open('training_loss.cvs', 'a') as f:
                 writer_csv = csv.writer(f)
-                writer_csv.writerow([epoch * n_total_steps, str(np.mean(running_loss))])
+                writer_csv.writerow([epoch * n_total_steps, str(np.mean(running_loss2))])
             running_loss2 = []
 
         # validate the model

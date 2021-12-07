@@ -15,7 +15,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 from early_stopping_pytorch.pytorchtools import EarlyStopping
-
+import csv
 
 def euclid_dist(output, target):
     output = output
@@ -172,6 +172,7 @@ def train_with_early_stopping(model, train_data_loader, valid_data_loader, crite
         model.train()  # Set model to training mode
 
         running_loss = []
+        running_loss2 = []
         valid_losses = []
         avg_valid_losses = []
         # print("Training in progress ...")
@@ -218,11 +219,16 @@ def train_with_early_stopping(model, train_data_loader, valid_data_loader, crite
             inputs_size = image.size(0)
 
             running_loss.append(total_loss.item())
+            running_loss2.append(total_loss.item())
             if i % 50 == 49:
                 logger.info('%s' % (str(np.mean(running_loss))))
                 writer.add_scalar('training_loss', np.mean(running_loss), epoch * n_total_steps + i)
                 running_loss = []
 
+        with open('training_loss.cvs', 'a') as f:
+            writer_csv = csv.writer(f)
+            writer_csv.writerow([epoch * n_total_steps, str(np.mean(running_loss2))])
+        running_loss2 = []
 
         # validate the model
         model.eval()
@@ -276,6 +282,9 @@ def train_with_early_stopping(model, train_data_loader, valid_data_loader, crite
         valid_losses = []
 
         writer.add_scalar('validation_loss', valid_loss, epoch * n_total_steps)
+        with open ('validation_loss.cvs', 'a') as f:
+            writer_csv2 = csv.writer(f)
+            writer_csv2.writerow([epoch*n_total_steps, str(valid_loss)])
 
         # early stopping detector
         early_stopping(valid_loss, model, optimizer, epoch, logger)

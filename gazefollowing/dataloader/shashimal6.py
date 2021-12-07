@@ -149,7 +149,7 @@ class GooDataset(Dataset):
             return img, face, head, gt_label, centers, gaze_idx, gt_bboxes, gt_labels
         else:
             return img, face, location_channel, object_channel,head_channel ,head,gt_label, head_box, gtbox
-
+    
 
 
 class GazeDataset(Dataset):
