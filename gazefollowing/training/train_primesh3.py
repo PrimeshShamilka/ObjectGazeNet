@@ -6,6 +6,7 @@ from early_stopping_pytorch.pytorchtools import EarlyStopping
 from tqdm import tqdm
 import torch.nn as nn
 import warnings
+import csv
 
 # warnings.filterwarnings('error')
 
@@ -63,6 +64,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
         model.train()  # Set model to training mode
 
         running_loss = []
+        running_loss2 = []
         validation_loss = []
         for i, (img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, gtbox) in tqdm(enumerate(train_data_loader), total=len(train_data_loader)) :
             image =  img.cuda()
@@ -103,6 +105,10 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
                 # writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
                 running_loss = []
 
+        with open('training_loss.cvs', 'a') as f:
+            writer_csv = csv.writer(f)
+            writer_csv.writerow([epoch * n_total_steps, str(np.mean(running_loss2))])
+        running_loss2 = []
 
          # Validation
         model.eval()
@@ -141,6 +147,9 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
 
         logger.info('%s'%(str(val_loss)))
         writer.add_scalar('validation_loss',val_loss,epoch)
+        with open ('validation_loss.cvs', 'a') as f:
+            writer_csv2 = csv.writer(f)
+            writer_csv2.writerow([epoch*n_total_steps, str(val_loss)])
         validation_loss = []
 
         early_stopping(val_loss, model, optimizer, epoch, logger)

@@ -144,7 +144,7 @@ class GooDataset(Dataset):
             img = self.transform(img)
             face = self.transform2(face)
         if self.training == 'test':
-            return img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, gtbox
+            return img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, image_path, gtbox
         elif self.training == 'test_prediction':
             return img, face, head, gt_label, centers, gaze_idx, gt_bboxes, gt_labels
         else:
