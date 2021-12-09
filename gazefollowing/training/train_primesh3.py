@@ -99,7 +99,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
             loss.backward()
             optimizer.step()
             running_loss.append(loss.item())
-
+            running_loss2.append(loss.item())
             if i % 10 == 9:
                 logger.info('%s'%(str(np.mean(running_loss))))
                 # writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
